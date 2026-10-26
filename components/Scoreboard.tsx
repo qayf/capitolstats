@@ -1,5 +1,6 @@
 import { cacheLife } from "next/cache";
-import { getAllVotes, rollCallUrl, type RollCall } from "@/lib/sources/votes";
+import Link from "next/link";
+import { getAllVotes, votePath, type RollCall } from "@/lib/sources/votes";
 import { date, parseMeasure } from "@/lib/format";
 
 // ESPN-style strip of the latest floor votes, shown under the top bar.
@@ -27,7 +28,7 @@ export async function Scoreboard() {
         {latest.map(({ r, congress }) => {
           const m = parseMeasure(r.measure, congress);
           return (
-            <a key={`${r.chamber}-${r.roll}`} className="score" href={rollCallUrl(r, congress)} target="_blank" rel="noreferrer">
+            <Link key={`${r.chamber}-${r.roll}`} className="score" href={votePath(r)}>
               <div className="score-top">
                 <span>
                   {r.chamber === "house" ? "House" : "Senate"} · {r.clerkRoll}
@@ -41,7 +42,7 @@ export async function Scoreboard() {
                   {r.yeas}–{r.nays}
                 </span>
               </div>
-            </a>
+            </Link>
           );
         })}
       </div>

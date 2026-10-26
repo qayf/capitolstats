@@ -1,6 +1,7 @@
 import type { Bill } from "@/lib/sources/congress";
 import { billStatus } from "@/lib/sources/congress";
-import { rollCallUrl } from "@/lib/sources/votes";
+import Link from "next/link";
+import { votePath } from "@/lib/sources/votes";
 import type { MemberVote } from "@/lib/profile";
 import { billLabel, billUrl, date, ordinal, parseMeasure } from "@/lib/format";
 
@@ -27,22 +28,18 @@ export function VotesTable({ votes, congress, compact = false }: { votes: Member
                 <td className="nw">{date(v.date)}</td>
                 {!compact && (
                   <td className="r">
-                    <a className="link" href={rollCallUrl(v, congress)} target="_blank" rel="noreferrer">
+                    <Link className="link" href={votePath(v)}>
                       {v.clerkRoll}
-                    </a>
+                    </Link>
                   </td>
                 )}
                 <td className="nw">
-                  {m.url ? (
-                    <a className="link" href={m.url} target="_blank" rel="noreferrer">
-                      {m.label}
-                    </a>
-                  ) : (
-                    m.label
-                  )}
+                  <Link className="link" href={votePath(v)}>
+                    {m.label}
+                  </Link>
                 </td>
                 <td className="clip">
-                  {v.question || "—"}
+                  <Link href={votePath(v)}>{v.question || "—"}</Link>
                   {v.description && <span className="sub">{v.description}</span>}
                 </td>
                 {!compact && <td className="dim">{v.result}</td>}

@@ -1,4 +1,5 @@
-import { rollCallUrl, type ChamberVotes } from "@/lib/sources/votes";
+import Link from "next/link";
+import { votePath, type ChamberVotes } from "@/lib/sources/votes";
 import { date, parseMeasure } from "@/lib/format";
 
 export function RollCallTable({ data, limit }: { data: ChamberVotes; limit: number }) {
@@ -22,21 +23,17 @@ export function RollCallTable({ data, limit }: { data: ChamberVotes; limit: numb
               <tr key={r.roll}>
                 <td className="nw">{date(r.date)}</td>
                 <td className="r">
-                  <a className="link" href={rollCallUrl(r, data.congress)} target="_blank" rel="noreferrer">
+                  <Link className="link" href={votePath(r)}>
                     {r.clerkRoll}
-                  </a>
+                  </Link>
                 </td>
                 <td className="nw">
-                  {m.url ? (
-                    <a className="link" href={m.url} target="_blank" rel="noreferrer">
-                      {m.label}
-                    </a>
-                  ) : (
-                    m.label
-                  )}
+                  <Link className="link" href={votePath(r)}>
+                    {m.label}
+                  </Link>
                 </td>
                 <td className="clip">
-                  {r.question || "—"}
+                  <Link href={votePath(r)}>{r.question || "—"}</Link>
                   {r.description && <span className="sub">{r.description}</span>}
                 </td>
                 <td className="dim">{r.result}</td>

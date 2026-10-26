@@ -325,6 +325,31 @@ table.data th.sorted { color: var(--ink); }
 footer.site { max-width: var(--max); margin: 8px auto 0; padding: 20px 16px 40px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
 footer.site a { color: var(--link); }
 
+/* ---------- vote page ---------- */
+
+.vote-head { padding: 20px 16px 18px; }
+.eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--accent); margin-bottom: 6px; }
+.vote-head .profile-name { font-size: 30px; max-width: 900px; }
+.vote-desc { margin: 8px 0 0; color: var(--ink-2); font-size: 15px; max-width: 900px; }
+.vote-score { display: flex; flex-wrap: wrap; gap: 12px 36px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.vote-result { font-family: var(--cond); font-size: 20px; font-weight: 700; line-height: 1.6; }
+.vote-bill-title { font-size: 16px; line-height: 1.35; margin-bottom: 10px; }
+.facts { margin: 0 0 12px; display: grid; gap: 4px; font-size: 13px; }
+.facts div { display: grid; grid-template-columns: 110px 1fr; gap: 8px; }
+.facts dt { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding-top: 2px; }
+.facts dd { margin: 0; }
+.summary { margin: 0 0 10px; line-height: 1.55; }
+.summary:last-child { margin-bottom: 0; }
+.roster-group + .roster-group { border-top: 1px solid var(--line); }
+.roster-head { font-family: var(--cond); font-size: 14px; text-transform: uppercase; padding: 10px 16px 6px; display: flex; gap: 8px; align-items: baseline; }
+.roster-head span { color: var(--muted); }
+.roster-head.yea { color: #1d6b3a; }
+.roster-head.nay { color: var(--accent); }
+.roster { list-style: none; margin: 0; padding: 0 16px 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 3px 16px; font-size: 13px; }
+.roster li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.roster .st { color: var(--muted); font-size: 12px; margin-left: 5px; }
+table.data tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
+
 .mobile-nav { display: none; background: #1d1d1d; overflow-x: auto; }
 .mobile-nav a { padding: 9px 14px; color: #d6d6d6; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .mobile-nav a.active { color: #fff; box-shadow: inset 0 -3px 0 var(--accent); }
@@ -349,6 +374,8 @@ footer.site a { color: var(--link); }
   .profile-top { gap: 14px; padding-top: 16px; align-items: flex-start; }
   .profile-photo { width: 84px; height: 103px; }
   .profile-name { font-size: 27px; }
+  .vote-head .profile-name { font-size: 23px; }
+  .vote-score { gap: 10px 24px; }
   .profile-meta { flex-direction: column; gap: 2px; font-size: 13px; }
   .profile-meta .sep { display: none; }
   .glance { grid-template-columns: 1fr; }

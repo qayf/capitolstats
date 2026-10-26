@@ -50,8 +50,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           Data from <a href="https://www.congress.gov/">Congress.gov</a>,{" "}
           <a href="https://www.fec.gov/data/">the Federal Election Commission</a>,{" "}
           <a href="https://voteview.com/">Voteview</a> (House Clerk and Senate roll calls) and the{" "}
-          <a href="https://github.com/unitedstates/congress-legislators">congress-legislators</a> project. Capitol Stats shows
-          what members vote on and whether they were present, not how they voted.
+          <a href="https://github.com/unitedstates/congress-legislators">congress-legislators</a> project. Member profiles show
+          what each member votes on and whether they were present; each vote&apos;s page lists how every member voted.
         </footer>
       </body>
     </html>

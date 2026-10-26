@@ -96,3 +96,58 @@ export function policyAreas(bills: Bill[], limit = 8) {
     .sort((a, b) => b.value - a.value)
     .slice(0, limit);
 }
+
+export interface BillOverview {
+  title: string;
+  introduced: string | null;
+  policyArea: string | null;
+  sponsor: { id: string; name: string } | null;
+  latestAction: { date: string; text: string } | null;
+  summary: string | null; // plain text of the latest CRS summary
+}
+
+function stripHtml(html: string) {
+  return html
+    .replace(/<\/p>|<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+}
+
+export async function getBillOverview(congress: number, type: string, number: string): Promise<BillOverview> {
+  "use cache";
+  cacheLife("hours");
+
+  const path = `/bill/${congress}/${type.toLowerCase()}/${number}`;
+  const [{ bill }, summaries] = await Promise.all([
+    fetchJSON<{
+      bill: {
+        title: string;
+        introducedDate?: string;
+        policyArea?: { name: string };
+        sponsors?: { bioguideId: string; fullName: string }[];
+        latestAction?: { actionDate: string; text: string };
+      };
+    }>(url(path), 6 * HOUR),
+    fetchJSON<{ summaries?: { text: string; updateDate: string }[] }>(url(`${path}/summaries`), 6 * HOUR).catch(() => ({
+      summaries: [],
+    })),
+  ]);
+
+  const latest = [...(summaries.summaries ?? [])].sort((a, b) => b.updateDate.localeCompare(a.updateDate))[0];
+  const sponsor = bill.sponsors?.[0];
+  return {
+    title: bill.title,
+    introduced: bill.introducedDate ?? null,
+    policyArea: bill.policyArea?.name ?? null,
+    sponsor: sponsor ? { id: sponsor.bioguideId, name: sponsor.fullName } : null,
+    latestAction: bill.latestAction ? { date: bill.latestAction.actionDate, text: bill.latestAction.text } : null,
+    summary: latest ? stripHtml(latest.text) : null,
+  };
+}

@@ -36,7 +36,7 @@ export default function VotesPage() {
         <Suspense fallback={<Skeleton />}>
           <Chamber chamber="house" />
         </Suspense>
-        <p className="note">Yea–Nay is the chamber-wide tally. Click a roll number for the official record.</p>
+        <p className="note">Yea–Nay is the chamber-wide tally. Click a vote for its summary and how each member voted.</p>
       </div>
     </main>
   );

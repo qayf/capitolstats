@@ -1,11 +1,10 @@
 import { cacheLife } from "next/cache";
 import { fetchText, HOUR } from "../http";
-import type { Chamber } from "./legislators";
+import { getMembers, type Chamber } from "./legislators";
 
 // Roll-call votes for both chambers from Voteview (UCLA), which republishes the
-// House Clerk and Senate records as bulk CSVs. Individual positions are only
-// used to tell whether a member voted or missed the vote; they are dropped here
-// and never returned.
+// House Clerk and Senate records as bulk CSVs. Member profiles only use
+// attendance; individual positions are returned per roll call by getRollCall.
 const BASE = "https://voteview.com/static/data/out";
 
 export interface RollCall {
@@ -18,6 +17,7 @@ export interface RollCall {
   question: string;
   description: string;
   result: string;
+  majority: string; // "1/2", "3/5", "2/3"
   yeas: number;
   nays: number;
 }
@@ -98,17 +98,25 @@ function toObjects(rows: string[][]) {
 const VOTED = new Set(["1", "6", "7", "8"]);
 const MISSED = new Set(["2", "3", "4", "5", "9"]);
 
+function filePrefix(chamber: Chamber, congress: number) {
+  return `${chamber === "house" ? "H" : "S"}${congress}`;
+}
+
+function fileUrl(kind: "rollcalls" | "members" | "votes", prefix: string) {
+  return `${BASE}/${kind}/${prefix}_${kind}.csv`;
+}
+
 export async function getChamberVotes(chamber: Chamber): Promise<ChamberVotes> {
   "use cache";
   cacheLife("hours");
 
   const congress = currentCongress();
-  const prefix = `${chamber === "house" ? "H" : "S"}${congress}`;
+  const prefix = filePrefix(chamber, congress);
 
   const [rollcallsCsv, membersCsv, votesCsv] = await Promise.all([
-    fetchText(`${BASE}/rollcalls/${prefix}_rollcalls.csv`, 6 * HOUR),
-    fetchText(`${BASE}/members/${prefix}_members.csv`, 6 * HOUR),
-    fetchText(`${BASE}/votes/${prefix}_votes.csv`, 6 * HOUR),
+    fetchText(fileUrl("rollcalls", prefix), 6 * HOUR),
+    fetchText(fileUrl("members", prefix), 6 * HOUR),
+    fetchText(fileUrl("votes", prefix), 6 * HOUR),
   ]);
 
   const rollcalls: RollCall[] = toObjects(parseCSV(rollcallsCsv))
@@ -122,6 +130,7 @@ export async function getChamberVotes(chamber: Chamber): Promise<ChamberVotes> {
       question: decode(r.vote_question ?? ""),
       description: decode(r.vote_desc || r.dtl_desc || ""),
       result: r.vote_result ?? "",
+      majority: r.majority_requirement ?? "",
       yeas: Number(r.yea_count),
       nays: Number(r.nay_count),
     }))
@@ -171,4 +180,80 @@ export function rollCallUrl(r: RollCall, congress: number) {
   if (r.chamber === "house") return `https://clerk.house.gov/Votes/${year}${r.clerkRoll}`;
   const roll = String(r.clerkRoll).padStart(5, "0");
   return `https://www.senate.gov/legislative/LIS/roll_call_votes/vote${congress}${r.session}/vote_${congress}_${r.session}_${roll}.htm`;
+}
+
+// Our own page for a roll call, keyed by year and official roll number.
+export function votePath(r: Pick<RollCall, "chamber" | "date" | "clerkRoll">) {
+  return `/vote/${r.chamber}/${r.date.slice(0, 4)}/${r.clerkRoll}`;
+}
+
+export type Position = "yea" | "nay" | "present" | "notVoting";
+
+export interface MemberPosition {
+  id: string | null; // bioguide, when known
+  name: string;
+  sortName: string;
+  party: "D" | "R" | "I";
+  state: string;
+  position: Position;
+}
+
+const POSITION: Record<string, Position> = {
+  "1": "yea",
+  "6": "nay",
+  "7": "present",
+  "8": "present",
+  "2": "notVoting",
+  "3": "notVoting",
+  "4": "notVoting",
+  "5": "notVoting",
+  "9": "notVoting",
+};
+
+// "OCASIO-CORTEZ, Alexandria" / "TUBERVILLE, Thomas Hawley (Tommy)" -> display name
+function displayName(bioname: string) {
+  const [last, rest = ""] = bioname.split(", ");
+  const nick = /\(([^)]+)\)/.exec(rest)?.[1];
+  const first = nick ?? rest.split(" ")[0];
+  const cased = last.toLowerCase().replace(/(^|[\s'-])([a-z])/g, (_, p, c) => p + c.toUpperCase()).replace(/^Mc([a-z])/, (_, c) => "Mc" + c.toUpperCase());
+  return { name: `${first} ${cased}`.trim(), sortName: `${cased}, ${first}` };
+}
+
+export async function getRollCall(chamber: Chamber, year: number, clerkRoll: number) {
+  "use cache";
+  cacheLife("hours");
+
+  const votes = await getChamberVotes(chamber);
+  const rollcall = votes.rollcalls.find((r) => r.clerkRoll === clerkRoll && r.date.startsWith(String(year)));
+  if (!rollcall) return null;
+
+  const prefix = filePrefix(chamber, votes.congress);
+  const [current, membersCsv, votesCsv] = await Promise.all([
+    getMembers().catch(() => []),
+    fetchText(fileUrl("members", prefix), 6 * HOUR),
+    fetchText(fileUrl("votes", prefix), 6 * HOUR),
+  ]);
+
+  const people = new Map<string, Omit<MemberPosition, "position">>();
+  for (const m of toObjects(parseCSV(membersCsv))) {
+    if (m.chamber.toLowerCase() !== chamber) continue;
+    const party = m.party_code === "100" ? "D" : m.party_code === "200" ? "R" : "I";
+    // Prefer the name a sitting member goes by ("Ted Budd", not "Theodore Budd").
+    const known = current.find((c) => c.id === m.bioguide_id);
+    const names = known ? { name: known.name, sortName: known.sortName } : displayName(m.bioname);
+    people.set(m.icpsr, { id: m.bioguide_id || null, ...names, party, state: m.state_abbrev });
+  }
+
+  const roll = String(rollcall.roll);
+  const positions: MemberPosition[] = [];
+  for (const line of votesCsv.split("\n")) {
+    const cols = line.split(",");
+    if (cols[2] !== roll) continue;
+    const person = people.get(cols[3]);
+    const position = POSITION[cols[4]?.trim()];
+    if (person && position) positions.push({ ...person, position });
+  }
+  positions.sort((a, b) => a.sortName.localeCompare(b.sortName));
+
+  return { congress: votes.congress, rollcall, positions };
 }
