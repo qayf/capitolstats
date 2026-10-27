@@ -4,8 +4,9 @@ import { Card, MemberLink, Skeleton, Unavailable } from "@/components/ui";
 import { RollCallTable } from "@/components/RollCallTable";
 import { cycleLabel, getMemberRows, getPeriod, type MemberRow } from "@/lib/stats";
 import { getChamberVotes } from "@/lib/sources/votes";
+import { getTopStories } from "@/lib/news";
 import { attempt } from "@/lib/http";
-import { moneyShort, num, ordinal, pct } from "@/lib/format";
+import { date, moneyShort, num, ordinal, pct } from "@/lib/format";
 
 function Leaderboard({ rows, value }: { rows: MemberRow[]; value: (r: MemberRow) => string }) {
   return (
@@ -80,6 +81,47 @@ async function LatestVotes({ chamber }: { chamber: "senate" | "house" }) {
   );
 }
 
+async function TopStories() {
+  const data = await attempt(() => getTopStories(5));
+  if (!data || data.stories.length === 0) {
+    return (
+      <Card title="Top Stories">
+        <Unavailable what="News" />
+      </Card>
+    );
+  }
+  const [lead, ...rest] = data.stories;
+  return (
+    <Card title="Top Stories" aside={`Latest floor action ${date(data.latest)}`} flush>
+      <Link href={`/news/${lead.slug}`} className="lead-story">
+        <div className="story-meta">
+          {lead.chamber === "house" ? "House" : "Senate"} · {date(lead.date)}
+        </div>
+        <h3 className="lead-headline">{lead.headline}</h3>
+        <p className="lead-dek">{lead.dek}</p>
+        <div className={`story-score ${lead.passed ? "won" : "lost"}`}>
+          {lead.measure && <span>{lead.measure}</span>}
+          <strong>{lead.tally}</strong>
+          <span>{lead.outcome}</span>
+        </div>
+      </Link>
+      <ul className="stories">
+        {rest.map((s) => (
+          <li key={s.slug}>
+            <Link href={`/news/${s.slug}`}>
+              <span className="story-meta">
+                {s.chamber === "house" ? "House" : "Senate"} · {date(s.date, false)} · {s.tally}
+              </span>
+              <span className="story-headline">{s.headline}</span>
+              <span className="story-dek">{s.dek}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 async function Leaders() {
   const [{ rows, financeAvailable, votesAvailable }, { cycle }] = await Promise.all([getMemberRows(), getPeriod()]);
 
@@ -132,7 +174,7 @@ export default function Home() {
             <Glance />
           </Suspense>
           <Suspense fallback={<Skeleton />}>
-            <LatestVotes chamber="senate" />
+            <TopStories />
           </Suspense>
           <Suspense fallback={<Skeleton />}>
             <LatestVotes chamber="house" />

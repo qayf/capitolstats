@@ -151,3 +151,19 @@ export async function getBillOverview(congress: number, type: string, number: st
     summary: latest ? stripHtml(latest.text) : null,
   };
 }
+
+// The opening paragraphs of a CRS summary, without the repeated short title.
+export function summaryParagraphs(overview: BillOverview, maxChars = 900) {
+  const paragraphs = (overview.summary ?? "")
+    .split("\n")
+    .map((p) => p.trim())
+    .filter((p, i) => p && !(i === 0 && overview.title.toLowerCase().includes(p.toLowerCase())));
+  const out: string[] = [];
+  let length = 0;
+  for (const p of paragraphs) {
+    if (out.length && length + p.length > maxChars) break;
+    out.push(p);
+    length += p.length;
+  }
+  return out;
+}

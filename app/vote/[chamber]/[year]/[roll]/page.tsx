@@ -2,20 +2,14 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, PartyTag, Skeleton, Unavailable } from "@/components/ui";
-import { getRollCall, rollCallUrl, type MemberPosition, type Position } from "@/lib/sources/votes";
-import { getBillOverview } from "@/lib/sources/congress";
+import { GROUPS, PartyTally } from "@/components/PartyTally";
+import { getRollCall, rollCallUrl, type MemberPosition } from "@/lib/sources/votes";
+import { getBillOverview, summaryParagraphs } from "@/lib/sources/congress";
 import { getMembers } from "@/lib/sources/legislators";
 import { attempt } from "@/lib/http";
-import { date, ordinal, parseMeasure, partyName } from "@/lib/format";
+import { date, ordinal, parseMeasure } from "@/lib/format";
 
 type Params = Promise<{ chamber: string; year: string; roll: string }>;
-
-const GROUPS: { key: Position; label: string }[] = [
-  { key: "yea", label: "Yea" },
-  { key: "nay", label: "Nay" },
-  { key: "present", label: "Present" },
-  { key: "notVoting", label: "Not Voting" },
-];
 
 const MAJORITY: Record<string, string> = {
   "1/2": "Simple majority",
@@ -63,16 +57,7 @@ async function Overview({ congress, measure, fallback }: { congress: number; mea
     );
   }
 
-  // CRS summaries usually open with the bill's short title; skip it since it's shown above.
-  const paragraphs = (bill.summary ?? "")
-    .split("\n")
-    .map((p) => p.trim())
-    .filter((p, i) => p && !(i === 0 && bill.title.toLowerCase().includes(p.toLowerCase())));
-  let summary = "";
-  for (const p of paragraphs) {
-    if (summary && summary.length + p.length > 900) break;
-    summary += (summary ? "\n" : "") + p;
-  }
+  const summary = summaryParagraphs(bill).join("\n");
 
   return (
     <Card title="What Was Voted On" footer={bill.summary ? "Summary written by the Congressional Research Service." : undefined}>
@@ -149,48 +134,6 @@ function Roster({ positions, currentIds }: { positions: MemberPosition[]; curren
           </div>
         );
       })}
-    </Card>
-  );
-}
-
-function PartyTally({ positions }: { positions: MemberPosition[] }) {
-  const parties = (["D", "R", "I"] as const).filter((p) => positions.some((x) => x.party === p));
-  const count = (party: string, pos: Position) => positions.filter((x) => x.party === party && x.position === pos).length;
-  return (
-    <Card title="Tally by Party" flush>
-      <table className="data">
-        <thead>
-          <tr>
-            <th>Party</th>
-            <th className="r">Yea</th>
-            <th className="r">Nay</th>
-            <th className="r">Pres.</th>
-            <th className="r">NV</th>
-          </tr>
-        </thead>
-        <tbody>
-          {parties.map((p) => (
-            <tr key={p}>
-              <td>
-                <PartyTag party={p} /> {partyName(p)}s
-              </td>
-              {GROUPS.map((g) => (
-                <td key={g.key} className="r">
-                  {count(p, g.key)}
-                </td>
-              ))}
-            </tr>
-          ))}
-          <tr className="total">
-            <td>Total</td>
-            {GROUPS.map((g) => (
-              <td key={g.key} className="r">
-                {positions.filter((x) => x.position === g.key).length}
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
     </Card>
   );
 }
