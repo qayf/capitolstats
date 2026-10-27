@@ -56,3 +56,17 @@ export async function attempt<T>(fn: () => Promise<T>): Promise<T | null> {
 
 export const HOUR = 60 * 60;
 export const DAY = 24 * HOUR;
+
+// Promise.all with at most `limit` tasks in flight, to be polite to free APIs.
+export async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
+}

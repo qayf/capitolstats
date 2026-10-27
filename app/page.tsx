@@ -4,7 +4,7 @@ import { Card, MemberLink, Skeleton, Unavailable } from "@/components/ui";
 import { RollCallTable } from "@/components/RollCallTable";
 import { cycleLabel, getMemberRows, getPeriod, type MemberRow } from "@/lib/stats";
 import { getChamberVotes } from "@/lib/sources/votes";
-import { getTopStories } from "@/lib/news";
+import { bodyLabel, getTopStories } from "@/lib/news";
 import { attempt } from "@/lib/http";
 import { date, moneyShort, num, ordinal, pct } from "@/lib/format";
 
@@ -92,10 +92,10 @@ async function TopStories() {
   }
   const [lead, ...rest] = data.stories;
   return (
-    <Card title="Top Stories" aside={`Latest floor action ${date(data.latest)}`} flush>
+    <Card title="Top Stories" aside={`Updated with action through ${date(data.latest)}`} flush>
       <Link href={`/news/${lead.slug}`} className="lead-story">
         <div className="story-meta">
-          {lead.chamber === "house" ? "House" : "Senate"} · {date(lead.date)}
+          {bodyLabel(lead.body)} · {date(lead.date)}
         </div>
         <h3 className="lead-headline">{lead.headline}</h3>
         <p className="lead-dek">{lead.dek}</p>
@@ -110,7 +110,7 @@ async function TopStories() {
           <li key={s.slug}>
             <Link href={`/news/${s.slug}`}>
               <span className="story-meta">
-                {s.chamber === "house" ? "House" : "Senate"} · {date(s.date, false)} · {s.tally}
+                {bodyLabel(s.body)} · {date(s.date, false)} · {s.tally}
               </span>
               <span className="story-headline">{s.headline}</span>
               <span className="story-dek">{s.dek}</span>

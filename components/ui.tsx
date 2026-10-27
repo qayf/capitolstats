@@ -138,3 +138,16 @@ export function Unavailable({ what }: { what: string }) {
 export function Skeleton() {
   return <div className="card skeleton" aria-busy="true" />;
 }
+
+export function JusticeLink({ id, name, photo, sub }: { id: string; name: string; photo: string | null; sub?: string }) {
+  return (
+    <Link href={`/court/justice/${id}`} className="who">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="thumb" src={photo ?? ""} alt="" loading="lazy" />
+      <span>
+        {name}
+        {sub && <span className="sub">{sub}</span>}
+      </span>
+    </Link>
+  );
+}

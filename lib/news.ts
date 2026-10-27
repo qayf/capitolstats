@@ -4,6 +4,8 @@ import { getAllVotes, getRollCall, votePath, type MemberPosition, type RollCall 
 import { getBillOverview, type BillOverview } from "./sources/congress";
 import type { Chamber } from "./sources/legislators";
 import { date, parseMeasure } from "./format";
+import { getCourt, split } from "./sources/court";
+import { caseDek, caseHeadline, caseSlug, scoreCase } from "./courtNews";
 
 // Original news recaps written from roll-call data, in the spirit of automated
 // sports game recaps. Recent floor votes are scored for newsworthiness, and the
@@ -185,9 +187,15 @@ function dekFor(r: RollCall, b: Breakdown) {
 
 // ---------- stories ----------
 
+export type Body = Chamber | "court";
+
+export function bodyLabel(b: Body) {
+  return b === "house" ? "House" : b === "senate" ? "Senate" : "Supreme Court";
+}
+
 export interface StorySummary {
   slug: string;
-  chamber: Chamber;
+  body: Body;
   date: string;
   headline: string;
   dek: string;
@@ -224,38 +232,71 @@ export async function getTopStories(limit = 5): Promise<{ stories: StorySummary[
   "use cache";
   cacheLife("hours");
 
-  const { house, senate } = await getAllVotes();
-  const all = [...house.rollcalls, ...senate.rollcalls];
-  if (all.length === 0) return null;
-  const newest = all.reduce((d, r) => (r.date > d ? r.date : d), "");
-  const congress = house.congress;
+  const [votes, court] = await Promise.all([attempt(getAllVotes), attempt(getCourt)]);
+  const all = votes ? [...votes.house.rollcalls, ...votes.senate.rollcalls] : [];
+  const decided = (court?.decided ?? []).filter((c) => c.votes.length > 0);
+  if (all.length === 0 && decided.length === 0) return null;
+
+  const newestVote = all.reduce((d, r) => (r.date > d ? r.date : d), "");
+  const newestCase = decided[0]?.decided ?? "";
+  const newest = newestVote > newestCase ? newestVote : newestCase;
+  const congress = votes?.house.congress ?? 0;
+
+  type Candidate = { body: Body; s: number } & ({ kind: "vote"; r: RollCall } | { kind: "case"; c: (typeof decided)[number] });
+  // Each body is scored against its own latest activity, so the Court's summer
+  // decisions can compete with a Congress that voted last week; a small global
+  // recency penalty keeps the freshest news on top.
+  const globalAge = (d: string) => (0.03 * daysBetween(d, newest));
 
   // One candidate per measure per chamber: its most newsworthy vote in the last month.
-  const best = new Map<string, { r: RollCall; s: number }>();
+  const best = new Map<string, Candidate>();
   for (const r of all) {
-    if (daysBetween(r.date, newest) > 30) continue;
+    if (daysBetween(r.date, newestVote) > 30) continue;
     const key = `${r.chamber}:${r.measure || `roll${r.roll}`}`;
-    const s = score(r, newest);
+    const s = score(r, newestVote) - globalAge(r.date);
     const current = best.get(key);
-    if (!current || s > current.s) best.set(key, { r, s });
+    if (!current || s > current.s) best.set(key, { kind: "vote", body: r.chamber, r, s });
   }
-  // Keep both chambers in the mix: no more than limit - 2 stories from either one.
+  for (const c of decided) {
+    if (daysBetween(c.decided!, newestCase) > 30) continue;
+    best.set(`court:${c.term}:${c.docket}`, { kind: "case", body: "court", c, s: scoreCase(c, newestCase) - globalAge(c.decided!) });
+  }
+
+  // Give every body its best story, then fill by score with at most two per body.
   const ranked = [...best.values()].sort((a, b) => b.s - a.s);
-  const perChamber = { house: 0, senate: 0 };
-  const picked: { r: RollCall; s: number }[] = [];
+  const picked: Candidate[] = [];
+  for (const body of ["senate", "house", "court"] as Body[]) {
+    const top = ranked.find((c) => c.body === body);
+    if (top && picked.length < limit) picked.push(top);
+  }
+  const count = (b: Body) => picked.filter((p) => p.body === b).length;
   for (const c of ranked) {
     if (picked.length === limit) break;
-    if (perChamber[c.r.chamber] >= limit - 2) continue;
-    perChamber[c.r.chamber]++;
-    picked.push(c);
+    if (!picked.includes(c) && count(c.body) < 2) picked.push(c);
   }
   for (const c of ranked) {
     if (picked.length === limit) break;
     if (!picked.includes(c)) picked.push(c);
   }
+  picked.sort((a, b) => b.s - a.s);
 
   const stories = await Promise.all(
-    picked.map(async ({ r }) => {
+    picked.map(async (p): Promise<StorySummary> => {
+      if (p.kind === "case") {
+        const c = p.c;
+        return {
+          slug: caseSlug(c),
+          body: "court",
+          date: c.decided!,
+          headline: caseHeadline(c),
+          dek: caseDek(c, court?.justices ?? []),
+          measure: `No. ${c.docket}`,
+          tally: split(c),
+          passed: true,
+          outcome: c.minority === 0 ? "Unanimous" : "Decided",
+        };
+      }
+      const r = p.r;
       const [detail, overview] = await Promise.all([
         getRollCall(r.chamber, Number(r.date.slice(0, 4)), r.clerkRoll),
         overviewFor(r, congress),
@@ -263,7 +304,7 @@ export async function getTopStories(limit = 5): Promise<{ stories: StorySummary[
       const b = breakdown(detail?.positions ?? []);
       return {
         slug: storySlug(r),
-        chamber: r.chamber,
+        body: r.chamber,
         date: r.date,
         headline: headlineFor(r, overview, congress),
         dek: dekFor(r, b),

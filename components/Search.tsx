@@ -9,6 +9,7 @@ export interface SearchEntry {
   name: string;
   seat: string;
   party: string;
+  href?: string;
 }
 
 function normalize(s: string) {
@@ -40,10 +41,12 @@ export function Search({ entries }: { entries: SearchEntry[] }) {
       .map((r) => r.e);
   }, [entries, query]);
 
-  function go(id: string) {
+  const hrefFor = (e: SearchEntry) => e.href ?? `/member/${e.id}`;
+
+  function go(e: SearchEntry) {
     setOpen(false);
     setQuery("");
-    router.push(`/member/${id}`);
+    router.push(hrefFor(e));
   }
 
   return (
@@ -56,8 +59,8 @@ export function Search({ entries }: { entries: SearchEntry[] }) {
     >
       <input
         type="search"
-        placeholder="Search members of Congress"
-        aria-label="Search members of Congress"
+        placeholder="Search Congress and the Court"
+        aria-label="Search members of Congress and justices"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -73,7 +76,7 @@ export function Search({ entries }: { entries: SearchEntry[] }) {
             e.preventDefault();
             setSel((s) => Math.max(s - 1, 0));
           } else if (e.key === "Enter" && results[sel]) {
-            go(results[sel].id);
+            go(results[sel]);
           } else if (e.key === "Escape") {
             setOpen(false);
           }
@@ -84,7 +87,7 @@ export function Search({ entries }: { entries: SearchEntry[] }) {
           {results.map((r, i) => (
             <li key={r.id} className={i === sel ? "sel" : undefined}>
               <Link
-                href={`/member/${r.id}`}
+                href={hrefFor(r)}
                 onClick={() => {
                   setOpen(false);
                   setQuery("");
@@ -92,7 +95,7 @@ export function Search({ entries }: { entries: SearchEntry[] }) {
               >
                 <span>{r.name}</span>
                 <span className="meta">
-                  {r.party} · {r.seat}
+                  {r.party ? `${r.party} · ${r.seat}` : r.seat}
                 </span>
               </Link>
             </li>

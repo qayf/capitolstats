@@ -6,6 +6,7 @@ import { NavLinks, NavLinksFallback } from "@/components/NavLinks";
 import { Search, type SearchEntry } from "@/components/Search";
 import { Scoreboard } from "@/components/Scoreboard";
 import { getMembers } from "@/lib/sources/legislators";
+import { getCourt } from "@/lib/sources/court";
 import { seatLabel } from "@/lib/people";
 import "./globals.css";
 
@@ -17,8 +18,11 @@ export const metadata: Metadata = {
 };
 
 async function SearchLoader() {
-  const members = await getMembers().catch(() => []);
-  const entries: SearchEntry[] = members.map((m) => ({ id: m.id, name: m.name, seat: seatLabel(m), party: m.party }));
+  const [members, court] = await Promise.all([getMembers().catch(() => []), getCourt().catch(() => null)]);
+  const entries: SearchEntry[] = [
+    ...members.map((m) => ({ id: m.id, name: m.name, seat: seatLabel(m), party: m.party })),
+    ...(court?.justices ?? []).map((j) => ({ id: j.id, name: j.name, seat: "Supreme Court", party: "", href: `/court/justice/${j.id}` })),
+  ];
   return <Search entries={entries} />;
 }
 
@@ -49,7 +53,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <footer className="site">
           Data from <a href="https://www.congress.gov/">Congress.gov</a>,{" "}
           <a href="https://www.fec.gov/data/">the Federal Election Commission</a>,{" "}
-          <a href="https://voteview.com/">Voteview</a> (House Clerk and Senate roll calls) and the{" "}
+          <a href="https://voteview.com/">Voteview</a> (House Clerk and Senate roll calls),{" "}
+          <a href="https://www.oyez.org/">Oyez</a> (Supreme Court, CC BY-NC 4.0) and the{" "}
           <a href="https://github.com/unitedstates/congress-legislators">congress-legislators</a> project. Member profiles show
           what each member votes on and whether they were present; each vote&apos;s page lists how every member voted.
         </footer>

@@ -119,7 +119,8 @@ h1, h2, h3 { margin: 0; }
 }
 .score:hover { background: #fafafa; text-decoration: none; }
 .score-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
-.score-measure { font-weight: 700; margin-top: 2px; }
+.score-measure { font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.score.court .score-top span:first-child { color: #6b4e16; }
 .score-bottom { display: flex; justify-content: space-between; margin-top: 1px; }
 .score-result { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
 .score-tally { font-family: var(--cond); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -139,7 +140,7 @@ h1, h2, h3 { margin: 0; }
 
 .page { max-width: var(--max); margin: 0 auto; padding: 16px; }
 .cols { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
-.stack { display: grid; gap: 16px; }
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
 .card-head {
@@ -201,6 +202,7 @@ table.data th.sortable:hover { color: var(--ink); }
 table.data th.sorted { color: var(--ink); }
 .who { display: flex; align-items: center; gap: 8px; font-weight: 600; white-space: nowrap; }
 .sub { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+.who .sub { white-space: normal; }
 
 /* ---------- small pieces ---------- */
 
@@ -386,7 +388,7 @@ table.data tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
 /* ---------- responsive ---------- */
 
 @media (max-width: 960px) {
-  .cols { grid-template-columns: 1fr; }
+  .cols { grid-template-columns: minmax(0, 1fr); }
   .stats { grid-template-columns: repeat(3, 1fr); }
   .stat:nth-child(3n) { border-right: 0; }
   .stat:nth-child(n + 4) { border-top: 1px solid var(--line-soft); }

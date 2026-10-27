@@ -8,6 +8,8 @@ import { summaryParagraphs } from "@/lib/sources/congress";
 import { getMembers } from "@/lib/sources/legislators";
 import { votePath } from "@/lib/sources/votes";
 import { date, parseMeasure } from "@/lib/format";
+import { getCourtStory, parseCaseSlug } from "@/lib/courtNews";
+import { casePath, split, type JusticeVote } from "@/lib/sources/court";
 
 type Params = Promise<{ slug: string }>;
 
@@ -22,12 +24,122 @@ async function load(params: Params) {
   }
 }
 
+async function loadCourt(params: Params) {
+  const { slug } = await params;
+  const key = parseCaseSlug(slug);
+  if (!key) return null;
+  try {
+    return { story: await getCourtStory(key.term, key.docket), failed: false };
+  } catch (err) {
+    console.warn((err as Error).message);
+    return { story: null, failed: true };
+  }
+}
+
 export async function generateMetadata({ params }: { params: Params }) {
+  const court = await loadCourt(params);
+  if (court) return { title: court.story ? court.story.headline : "Story not found", description: court.story?.dek };
   const { story } = await load(params);
   return { title: story ? story.headline : "Story not found", description: story?.dek };
 }
 
+function JusticeList({ votes, photos }: { votes: JusticeVote[]; photos: Record<string, string | null> }) {
+  return (
+    <table className="data">
+      <tbody>
+        {votes.map((v) => (
+          <tr key={v.justiceId}>
+            <td>
+              <Link href={`/court/justice/${v.justiceId}`} className="who">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="thumb" src={photos[v.justiceId] ?? ""} alt="" loading="lazy" />
+                {v.name}
+              </Link>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+async function CourtArticle({ params }: { params: Params }) {
+  const loaded = await loadCourt(params);
+  if (!loaded || (!loaded.story && !loaded.failed)) notFound();
+  if (!loaded.story) {
+    return (
+      <Card title="Story">
+        <Unavailable what="This story" />
+      </Card>
+    );
+  }
+  const { case: c, headline, dek, paragraphs, majority, minority, photos } = loaded.story;
+
+  return (
+    <div className="cols">
+      <article className="article">
+        <div className="story-meta">Supreme Court · {date(c.decided)} · Decision Recap</div>
+        <h1>{headline}</h1>
+        <p className="dek">{dek}</p>
+        <div className="byline">By Capitol Stats · Written from the Court&apos;s recorded votes in No. {c.docket}</div>
+        <div className="article-body">
+          {paragraphs.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+          {c.holding && (
+            <>
+              <h2>The Ruling</h2>
+              <p>{c.holding}</p>
+            </>
+          )}
+          {c.question && (
+            <>
+              <h2>The Question</h2>
+              {c.question.split("\n").map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
+            </>
+          )}
+          <p className="note">
+            Ruling and question summaries from{" "}
+            <a href={c.oyezUrl} target="_blank" rel="noreferrer">
+              Oyez
+            </a>{" "}
+            (CC BY-NC 4.0).
+          </p>
+        </div>
+      </article>
+      <div className="stack">
+        <Card title="Box Score" flush>
+          <div className="card-body">
+            <div className="story-meta" style={{ color: "var(--muted)" }}>
+              {c.name}
+            </div>
+            <div className="story-score won" style={{ marginTop: 8 }}>
+              <strong>{split(c)}</strong>
+              <span>{c.winningParty ? `For ${c.winningParty}` : "Decided"}</span>
+            </div>
+          </div>
+          <div className="card-foot">
+            <Link href={casePath(c)}>Full case page</Link>
+          </div>
+        </Card>
+        <Card title={`Majority · ${majority.length}`} flush>
+          <JusticeList votes={majority} photos={photos} />
+        </Card>
+        {minority.length > 0 && (
+          <Card title={`Dissent · ${minority.length}`} flush>
+            <JusticeList votes={minority} photos={photos} />
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
 async function Article({ params }: { params: Params }) {
+  const { slug } = await params;
+  if (slug.startsWith("scotus-")) return <CourtArticle params={params} />;
   const { story, failed } = await load(params);
   if (!story && !failed) notFound();
   if (!story) {
