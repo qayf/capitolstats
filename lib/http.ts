@@ -14,7 +14,7 @@ function cacheFile(url: string) {
   return path.join(CACHE_DIR, createHash("sha1").update(key).digest("hex"));
 }
 
-export async function fetchText(url: string, ttlSeconds: number): Promise<string> {
+export async function fetchText(url: string, ttlSeconds: number, headers: Record<string, string> = {}): Promise<string> {
   const file = cacheFile(url);
   let stale: string | null = null;
 
@@ -27,9 +27,7 @@ export async function fetchText(url: string, ttlSeconds: number): Promise<string
   }
 
   try {
-    const res = await fetch(url, { headers: { Accept: "application/json, text/csv, */*" } });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    const body = await res.text();
+    const body = await download(url, headers);
     await fs.mkdir(CACHE_DIR, { recursive: true });
     await fs.writeFile(file, body);
     return body;
@@ -40,8 +38,22 @@ export async function fetchText(url: string, ttlSeconds: number): Promise<string
   }
 }
 
-export async function fetchJSON<T>(url: string, ttlSeconds: number): Promise<T> {
-  return JSON.parse(await fetchText(url, ttlSeconds)) as T;
+// One retry for dropped connections and server errors; client errors fail fast.
+async function download(url: string, headers: Record<string, string>) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(url, { headers: { Accept: "application/json, text/csv, */*", ...headers } });
+      if (res.ok) return await res.text();
+      if (res.status < 500 || attempt > 0) throw new Error(`${res.status} ${res.statusText}`);
+    } catch (err) {
+      if (attempt > 0 || /^\d{3} /.test((err as Error).message)) throw err;
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+}
+
+export async function fetchJSON<T>(url: string, ttlSeconds: number, headers?: Record<string, string>): Promise<T> {
+  return JSON.parse(await fetchText(url, ttlSeconds, headers)) as T;
 }
 
 // Returns null instead of throwing, so one failing source doesn't take down a page.

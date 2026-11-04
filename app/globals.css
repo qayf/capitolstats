@@ -356,6 +356,15 @@ footer.site a { color: var(--link); }
 .article-table { margin: 0 -24px; }
 .article h2 { font-family: var(--cond); font-size: 18px; text-transform: uppercase; margin: 26px 0 10px; padding-top: 16px; border-top: 1px solid var(--line); }
 
+/* ---------- presidents ---------- */
+
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+.more { border: 1px solid #c9cacc; background: #fff; border-radius: 3px; height: 30px; padding: 0 12px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); }
+.more:hover { background: #f6f6f6; }
+.portrait { width: 34px; height: 42px; object-fit: cover; object-position: top; background: #e6e6e6; border-radius: 2px; flex: 0 0 auto; }
+.term-links { display: flex; gap: 8px; margin-top: 10px; font-size: 13px; }
+.term-links a { color: var(--link); }
+
 /* ---------- vote page ---------- */
 
 .vote-head { padding: 20px 16px 18px; }

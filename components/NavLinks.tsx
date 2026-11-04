@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/members?chamber=senate", label: "Senate" },
   { href: "/members?chamber=house", label: "House" },
   { href: "/court", label: "Supreme Court" },
+  { href: "/presidents", label: "Presidents" },
   { href: "/votes", label: "Floor Votes" },
 ];
 
@@ -20,6 +21,7 @@ export function NavLinks({ className }: { className: string }) {
     const [path, query] = href.split("?");
     if (path === "/") return pathname === "/";
     if (path === "/court") return pathname.startsWith("/court");
+    if (path === "/presidents") return pathname.startsWith("/presidents");
     if (path !== pathname) return false;
     const wanted = query ? new URLSearchParams(query).get("chamber") : null;
     return wanted === chamber;
