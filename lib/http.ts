@@ -9,6 +9,24 @@ const CACHE_DIR = path.join(process.cwd(), ".cache", "http");
 
 export const API_KEY = process.env.DATA_GOV_API_KEY || "DEMO_KEY";
 
+// Touched by /api/refresh. Cached responses with a TTL of an hour or less
+// (the live feeds) that are older than this file are fetched again.
+const REFRESH_MARKER = path.join(process.cwd(), ".cache", "refreshed-at");
+const LIVE_TTL = 60 * 60;
+
+export async function markRefreshed() {
+  await fs.mkdir(path.dirname(REFRESH_MARKER), { recursive: true });
+  await fs.writeFile(REFRESH_MARKER, new Date().toISOString());
+}
+
+async function refreshedAt() {
+  try {
+    return (await fs.stat(REFRESH_MARKER)).mtimeMs;
+  } catch {
+    return 0;
+  }
+}
+
 function cacheFile(url: string) {
   const key = url.replace(/api_key=[^&]+&?/, "");
   return path.join(CACHE_DIR, createHash("sha1").update(key).digest("hex"));
@@ -20,7 +38,8 @@ export async function fetchText(url: string, ttlSeconds: number, headers: Record
 
   try {
     const [stat, body] = await Promise.all([fs.stat(file), fs.readFile(file, "utf8")]);
-    if (Date.now() - stat.mtimeMs < ttlSeconds * 1000) return body;
+    const forced = ttlSeconds <= LIVE_TTL && stat.mtimeMs < (await refreshedAt());
+    if (!forced && Date.now() - stat.mtimeMs < ttlSeconds * 1000) return body;
     stale = body;
   } catch {
     // not cached yet

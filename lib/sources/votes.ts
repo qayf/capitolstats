@@ -1,6 +1,6 @@
-import { cacheLife } from "next/cache";
 import { DAY, fetchText, HOUR } from "../http";
 import { getMembers, type Chamber } from "./legislators";
+import { liveData } from "../live";
 
 // Roll-call votes for both chambers from Voteview (UCLA), which republishes the
 // House Clerk and Senate records as bulk CSVs. Member profiles only use
@@ -143,10 +143,10 @@ function sessionFor(date: string, congress: number) {
 
 export async function getChamberVotes(chamber: Chamber, congress = currentCongress()): Promise<ChamberVotes> {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   // Past Congresses are final, so their files can be cached much longer.
-  const ttl = congress < currentCongress() ? 30 * DAY : 6 * HOUR;
+  const ttl = congress < currentCongress() ? 30 * DAY : HOUR;
   const prefix = filePrefix(chamber, congress);
 
   const [rollcallsCsv, membersCsv, votesCsv] = await Promise.all([
@@ -265,7 +265,7 @@ function displayName(bioname: string) {
 
 export async function getRollCall(chamber: Chamber, year: number, clerkRoll: number) {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   // A Congress runs from January 3 of an odd year, so a year maps to one Congress
   // (votes on January 1–2 of an odd year belong to the one before).
@@ -275,7 +275,7 @@ export async function getRollCall(chamber: Chamber, year: number, clerkRoll: num
   const rollcall = votes.rollcalls.find((r) => r.clerkRoll === clerkRoll && r.date.startsWith(String(year)));
   if (!rollcall) return null;
 
-  const ttl = congress < currentCongress() ? 30 * DAY : 6 * HOUR;
+  const ttl = congress < currentCongress() ? 30 * DAY : HOUR;
   const prefix = filePrefix(chamber, votes.congress);
   const [current, membersCsv, votesCsv] = await Promise.all([
     getMembers().catch(() => []),
@@ -311,7 +311,7 @@ export async function getRollCall(chamber: Chamber, year: number, clerkRoll: num
 // `measure` uses Voteview's form, e.g. "HR3684".
 export async function getMeasureVotes(congress: number, measure: string): Promise<RollCall[]> {
   "use cache";
-  cacheLife("hours");
+  liveData();
   const code = measure.toUpperCase();
   const [house, senate] = await Promise.all([getChamberVotes("house", congress), getChamberVotes("senate", congress)]);
   return [...house.rollcalls, ...senate.rollcalls]

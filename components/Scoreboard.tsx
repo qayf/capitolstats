@@ -1,9 +1,9 @@
-import { cacheLife } from "next/cache";
 import Link from "next/link";
 import { getAllVotes, votePath, type RollCall } from "@/lib/sources/votes";
 import { casePath, getCourt, majorityAuthor, split, type CourtCase } from "@/lib/sources/court";
 import { attempt } from "@/lib/http";
 import { date, parseMeasure } from "@/lib/format";
+import { liveData } from "@/lib/live";
 
 type Item = { kind: "congress"; r: RollCall; congress: number } | { kind: "court"; c: CourtCase };
 
@@ -13,7 +13,7 @@ type Item = { kind: "congress"; r: RollCall; congress: number } | { kind: "court
 // strictly by date; otherwise they would scroll out of view.
 export async function Scoreboard() {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   const [votes, court] = await Promise.all([attempt(getAllVotes), attempt(getCourt)]);
 

@@ -1,4 +1,3 @@
-import { cacheLife } from "next/cache";
 import { attempt } from "./http";
 import { getAllVotes, getRollCall, votePath, type MemberPosition, type RollCall } from "./sources/votes";
 import { getBillOverview, type BillOverview } from "./sources/congress";
@@ -6,6 +5,7 @@ import type { Chamber } from "./sources/legislators";
 import { date, parseMeasure } from "./format";
 import { getCourt, split } from "./sources/court";
 import { caseDek, caseHeadline, caseSlug, scoreCase } from "./courtNews";
+import { liveData } from "./live";
 
 // Original news recaps written from roll-call data, in the spirit of automated
 // sports game recaps. Recent floor votes are scored for newsworthiness, and the
@@ -228,9 +228,9 @@ async function overviewFor(r: RollCall, congress: number) {
   return m ? attempt(() => getBillOverview(congress, m[1], m[2])) : null;
 }
 
-export async function getTopStories(limit = 5): Promise<{ stories: StorySummary[]; latest: string } | null> {
+export async function getTopStories(limit = 5): Promise<{ stories: StorySummary[]; latest: string; updatedAt: string } | null> {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   const [votes, court] = await Promise.all([attempt(getAllVotes), attempt(getCourt)]);
   const all = votes ? [...votes.house.rollcalls, ...votes.senate.rollcalls] : [];
@@ -316,7 +316,7 @@ export async function getTopStories(limit = 5): Promise<{ stories: StorySummary[
     }),
   );
 
-  return { stories, latest: newest };
+  return { stories, latest: newest, updatedAt: new Date().toISOString() };
 }
 
 function honorific(r: RollCall, p: MemberPosition) {
@@ -337,7 +337,7 @@ function weekday(iso: string) {
 
 export async function getStory(slug: string) {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   const key = parseSlug(slug);
   if (!key) return null;

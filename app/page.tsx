@@ -6,7 +6,7 @@ import { cycleLabel, getMemberRows, getPeriod, type MemberRow } from "@/lib/stat
 import { getChamberVotes } from "@/lib/sources/votes";
 import { bodyLabel, getTopStories } from "@/lib/news";
 import { attempt } from "@/lib/http";
-import { date, moneyShort, num, ordinal, pct } from "@/lib/format";
+import { date, moneyShort, num, ordinal, pct, timestampET } from "@/lib/format";
 
 function Leaderboard({ rows, value }: { rows: MemberRow[]; value: (r: MemberRow) => string }) {
   return (
@@ -92,7 +92,11 @@ async function TopStories() {
   }
   const [lead, ...rest] = data.stories;
   return (
-    <Card title="Top Stories" aside={`Updated with action through ${date(data.latest)}`} flush>
+    <Card
+      title="Top Stories"
+      aside={`Latest action ${date(data.latest)} · Updated ${timestampET(data.updatedAt)}`}
+      flush
+    >
       <Link href={`/news/${lead.slug}`} className="lead-story">
         <div className="story-meta">
           {bodyLabel(lead.body)} · {date(lead.date)}

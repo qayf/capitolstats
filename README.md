@@ -18,3 +18,7 @@ npm run dev
 - **Campaign finance:** [OpenFEC API](https://api.open.fec.gov/developers/)
 
 Upstream responses are cached on disk in `.cache/` (ignored by git) so the rate-limited APIs aren't hit on every request.
+
+## Keeping the feeds fresh
+
+The Latest Votes strip, Top Stories, vote pages and Supreme Court data are tagged as live data (`lib/live.ts`). While the site is visited they refresh at most every 30 minutes and are never served more than a day old. `GET /api/refresh` refreshes all of it immediately and rebuilds the home page; `vercel.json` calls it daily at 08:00 UTC, shortly after Voteview publishes its daily update. In production set `CRON_SECRET`, which the cron sends as a bearer token.

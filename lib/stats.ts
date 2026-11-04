@@ -4,6 +4,7 @@ import { getMembers, type Chamber, type Party } from "./sources/legislators";
 import { seatLabel } from "./people";
 import { currentCongress, getAllVotes, participation } from "./sources/votes";
 import { currentCycle, getCycleTotals } from "./sources/fec";
+import { liveData } from "./live";
 
 // One row per member, combining the bulk sources. Used by the members table and
 // the home page leaderboards.
@@ -26,7 +27,7 @@ export interface MemberRow {
 
 export async function getMemberRows(): Promise<{ rows: MemberRow[]; financeAvailable: boolean; votesAvailable: boolean }> {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   const [members, votes, totals] = await Promise.all([getMembers(), attempt(getAllVotes), attempt(getCycleTotals)]);
   const financeAvailable = !!totals && Object.keys(totals).length > 0;

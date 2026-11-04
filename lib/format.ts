@@ -82,6 +82,19 @@ export function parseMeasure(code: string, congress: number) {
   return { label: billLabel(type, number), url: BILL_TYPES[type] ? billPath({ congress, type, number }) : null };
 }
 
+const ET = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+// "Nov 3, 8:00 AM ET", for "updated" stamps.
+export function timestampET(iso: string) {
+  return `${ET.format(new Date(iso))} ET`;
+}
+
 // Our page for a bill or resolution.
 export function billPath(b: { congress: number; type: string; number: string | number }) {
   return `/bill/${b.congress}/${b.type.toLowerCase()}/${b.number}`;

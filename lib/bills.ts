@@ -1,10 +1,10 @@
-import { cacheLife } from "next/cache";
 import { attempt } from "./http";
 import { classify, passed } from "./news";
 import { getBillOverview } from "./sources/congress";
 import { getLawsForCongress, PRESIDENCIES } from "./sources/presidents";
 import { getMeasureVotes, getRollCall, type RollCall } from "./sources/votes";
 import type { Chamber } from "./sources/legislators";
+import { liveData } from "./live";
 
 // Everything for a bill's page: its details and summary, the enactment record
 // if it became law, and the recorded floor votes, with the deciding vote in
@@ -21,7 +21,7 @@ function decidingVote(votes: RollCall[], chamber: Chamber) {
 
 export async function getBill(congress: number, type: string, number: string) {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   const code = type.toUpperCase();
   const [laws, overview, votes] = await Promise.all([

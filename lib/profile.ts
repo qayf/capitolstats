@@ -4,11 +4,12 @@ import { getMember } from "./sources/legislators";
 import { getChamberVotes, participation, type RollCall } from "./sources/votes";
 import { getCycleTotals } from "./sources/fec";
 import { getLegislation, getMemberDetail } from "./sources/congress";
+import { liveData } from "./live";
 
 // Everything the profile header needs, in one cached call per member.
 export async function getProfileSummary(id: string) {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   const member = await getMember(id);
   if (!member) return null;
@@ -35,7 +36,7 @@ export interface MemberVote extends RollCall {
 // The member's recent roll calls, marked voted or missed. No positions.
 export async function getMemberVotes(id: string, limit = 100) {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   const member = await getMember(id);
   if (!member) return null;

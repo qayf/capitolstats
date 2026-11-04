@@ -1,5 +1,6 @@
 import { cacheLife } from "next/cache";
 import { DAY, fetchJSON, HOUR, mapLimit } from "../http";
+import { liveData } from "../live";
 
 // Supreme Court decisions and justice votes from the Oyez project
 // (Chicago-Kent College of Law), https://www.oyez.org. Oyez content is
@@ -205,19 +206,20 @@ export interface CourtData {
 
 export async function getCourt(): Promise<CourtData> {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   const term = currentTerm();
   const terms = [term, term - 1];
   const lists = await Promise.all(
-    terms.map((t) => fetchJSON<RawCase[]>(`${BASE}/cases?per_page=0&filter=term:${t}`, 6 * HOUR).catch(() => [] as RawCase[])),
+    terms.map((t) => fetchJSON<RawCase[]>(`${BASE}/cases?per_page=0&filter=term:${t}`, HOUR).catch(() => [] as RawCase[])),
   );
 
   const all = lists.flat();
   const decidedRefs = all.filter((c) => (c.timeline ?? []).some((t) => t?.event === "Decided"));
-  // Decided cases are final, so their detail pages can be cached for longer.
+  // Oyez fills in justice-by-justice votes some time after a decision, so
+  // recent cases are rechecked a few times a day.
   const details = await mapLimit(decidedRefs, 6, (c) =>
-    fetchJSON<RawCase>(`${BASE}/cases/${c.term}/${c.docket_number}`, DAY).catch(() => null),
+    fetchJSON<RawCase>(`${BASE}/cases/${c.term}/${c.docket_number}`, 6 * HOUR).catch(() => null),
   );
 
   const decided = details
@@ -251,7 +253,7 @@ export async function getCourt(): Promise<CourtData> {
 
 export async function getCase(term: number, docket: string): Promise<CourtCase | null> {
   "use cache";
-  cacheLife("hours");
+  liveData();
   const court = await getCourt();
   const found = court.decided.find((c) => c.term === term && c.docket === docket) ?? court.pending.find((c) => c.term === term && c.docket === docket);
   if (found) return found;

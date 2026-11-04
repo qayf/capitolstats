@@ -1,6 +1,6 @@
-import { cacheLife } from "next/cache";
 import { getCourt, majorityAuthor, split, type CourtCase, type Justice, type JusticeVote } from "./sources/court";
 import { date } from "./format";
+import { liveData } from "./live";
 
 // News recaps for Supreme Court decisions, written from the vote breakdown.
 // The Court's own summary of the holding (from Oyez) is shown separately and
@@ -66,7 +66,7 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 
 export async function getCourtStory(term: number, docket: string) {
   "use cache";
-  cacheLife("hours");
+  liveData();
 
   const court = await getCourt();
   const c = court.decided.find((x) => x.term === term && x.docket === docket);
