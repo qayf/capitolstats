@@ -7,7 +7,7 @@ import { getRollCall, rollCallUrl, type MemberPosition } from "@/lib/sources/vot
 import { getBillOverview, summaryParagraphs } from "@/lib/sources/congress";
 import { getMembers } from "@/lib/sources/legislators";
 import { attempt } from "@/lib/http";
-import { date, ordinal, parseMeasure } from "@/lib/format";
+import { billPath, date, ordinal, parseMeasure } from "@/lib/format";
 
 type Params = Promise<{ chamber: string; year: string; roll: string }>;
 
@@ -61,7 +61,9 @@ async function Overview({ congress, measure, fallback }: { congress: number; mea
 
   return (
     <Card title="What Was Voted On" footer={bill.summary ? "Summary written by the Congressional Research Service." : undefined}>
-      <h3 className="vote-bill-title">{bill.title}</h3>
+      <h3 className="vote-bill-title">
+        <Link href={billPath({ congress, type: m![1], number: m![2] })}>{bill.title}</Link>
+      </h3>
       <dl className="facts">
         {bill.sponsor && (
           <div>

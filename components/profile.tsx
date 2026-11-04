@@ -3,7 +3,7 @@ import { billStatus } from "@/lib/sources/congress";
 import Link from "next/link";
 import { votePath } from "@/lib/sources/votes";
 import type { MemberVote } from "@/lib/profile";
-import { billLabel, billUrl, date, ordinal, parseMeasure } from "@/lib/format";
+import { billLabel, billPath, date, ordinal, parseMeasure } from "@/lib/format";
 
 export function VotesTable({ votes, congress, compact = false }: { votes: MemberVote[]; congress: number; compact?: boolean }) {
   if (votes.length === 0) return <p className="empty">No roll-call votes recorded for this member yet.</p>;
@@ -70,21 +70,16 @@ export function BillsTable({ bills, showPolicy = true }: { bills: Bill[]; showPo
         <tbody>
           {bills.map((b) => {
             const status = billStatus(b);
-            const href = billUrl(b.congress, b.type, b.number);
             return (
               <tr key={`${b.congress}-${b.type}-${b.number}`}>
                 <td className="nw">
-                  {href ? (
-                    <a className="link" href={href} target="_blank" rel="noreferrer">
-                      {billLabel(b.type, b.number)}
-                    </a>
-                  ) : (
-                    billLabel(b.type, b.number)
-                  )}
+                  <Link className="link" href={billPath(b)}>
+                    {billLabel(b.type, b.number)}
+                  </Link>
                   <span className="sub">{ordinal(b.congress)} Congress</span>
                 </td>
                 <td className="clip">
-                  {b.title}
+                  <Link href={billPath(b)}>{b.title}</Link>
                   {b.latestAction && (
                     <span className="sub">
                       {date(b.latestAction.date)}: {b.latestAction.text}

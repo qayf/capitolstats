@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { BarList, Card, PartyTag, StatStrip, Unavailable } from "@/components/ui";
 import { LawsTable } from "@/components/LawsTable";
 import { getPresidency, PRESIDENCIES, termLabel, type PresidencyDetail } from "@/lib/sources/presidents";
-import { billLabel, date, lawPath, num, ordinal, partyName } from "@/lib/format";
+import { billLabel, date, billPath, num, ordinal, partyName } from "@/lib/format";
 
 type Params = Promise<{ slug: string }>;
 
@@ -111,7 +111,7 @@ async function President({ params }: { params: Params }) {
                             <td className="nw">{date(l.date)}</td>
                             <td className="clip">
                               <strong>
-                                <Link className="link" href={lawPath(l)}>
+                                <Link className="link" href={billPath(l)}>
                                   {l.name}
                                 </Link>
                               </strong>

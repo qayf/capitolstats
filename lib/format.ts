@@ -68,12 +68,6 @@ export function billLabel(type: string, number: string | number) {
   return t ? `${t.label} ${number}` : `${type} ${number}`;
 }
 
-export function billUrl(congress: number, type: string, number: string | number) {
-  const t = BILL_TYPES[type.toUpperCase()];
-  if (!t) return null;
-  return `https://www.congress.gov/bill/${ordinal(congress)}-congress/${t.slug}/${number}`;
-}
-
 // Voteview stores the measure as one token, e.g. "HR1234", "SJRES12", "PN1129".
 export function parseMeasure(code: string, congress: number) {
   const m = /^([A-Z]+)(\d+)$/.exec(code.trim().toUpperCase());
@@ -85,12 +79,12 @@ export function parseMeasure(code: string, congress: number) {
   if (type === "HAMDT" || type === "SAMDT") {
     return { label: `${type === "HAMDT" ? "H.Amdt." : "S.Amdt."} ${number}`, url: null };
   }
-  return { label: billLabel(type, number), url: billUrl(congress, type, number) };
+  return { label: billLabel(type, number), url: BILL_TYPES[type] ? billPath({ congress, type, number }) : null };
 }
 
-// Our page for an enacted law.
-export function lawPath(l: { congress: number; type: string; number: string }) {
-  return `/law/${l.congress}/${l.type.toLowerCase()}/${l.number}`;
+// Our page for a bill or resolution.
+export function billPath(b: { congress: number; type: string; number: string | number }) {
+  return `/bill/${b.congress}/${b.type.toLowerCase()}/${b.number}`;
 }
 
 export function partyName(p: string) {

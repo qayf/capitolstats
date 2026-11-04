@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Law } from "@/lib/sources/presidents";
-import { billLabel, date, lawPath } from "@/lib/format";
+import { billLabel, date, billPath } from "@/lib/format";
 
 const CEREMONIAL = new Set(["Naming & designations", "Commemorations"]);
 const PAGE = 100;
@@ -80,7 +80,7 @@ export function LawsTable({ laws, categories }: { laws: Law[]; categories: strin
                     <span className="sub">{billLabel(l.type, l.number)}</span>
                   </td>
                   <td className="clip">
-                    <Link className="link" href={lawPath(l)}>
+                    <Link className="link" href={billPath(l)}>
                       {l.title}
                     </Link>
                   </td>

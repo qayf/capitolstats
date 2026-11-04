@@ -178,7 +178,13 @@ async function Article({ params }: { params: Params }) {
             <>
               <h2>Background</h2>
               <p>
-                <strong>{overview.title.replace(/\.$/, "")}</strong>
+                <strong>
+                  {parseMeasure(r.measure, congress).url ? (
+                    <Link href={parseMeasure(r.measure, congress).url!}>{overview.title.replace(/\.$/, "")}</Link>
+                  ) : (
+                    overview.title.replace(/\.$/, "")
+                  )}
+                </strong>
                 {overview.sponsor && (
                   <>
                     {" "}
