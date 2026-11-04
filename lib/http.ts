@@ -61,7 +61,12 @@ export async function fetchText(url: string, ttlSeconds: number, headers: Record
 async function download(url: string, headers: Record<string, string>) {
   for (let attempt = 0; ; attempt++) {
     try {
-      const res = await fetch(url, { headers: { Accept: "application/json, text/csv, */*", ...headers } });
+      // Give up on a hung upstream after a minute. (A signal also opts out of
+      // Next's per-render fetch sharing, which the disk cache makes redundant.)
+      const res = await fetch(url, {
+        headers: { Accept: "application/json, text/csv, */*", ...headers },
+        signal: AbortSignal.timeout(60_000),
+      });
       if (res.ok) return await res.text();
       if (res.status < 500 || attempt > 0) throw new Error(`${res.status} ${res.statusText}`);
     } catch (err) {

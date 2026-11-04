@@ -114,16 +114,23 @@ const SIZE_LABELS: Record<number, string> = {
 const NOT_EMPLOYERS =
   /^(N\/?A|NULL|NONE|NOT EMPLOYED|UNEMPLOYED|INFORMATION REQUESTED.*|REQUESTED|SELF|SELF[- ]EMPLOYED|RETIRED|HOMEMAKER|STUDENT|CEO|OWNER|PRESIDENT|BUSINESS OWNER|ATTORNEY|PHYSICIAN|INVESTOR|ENTREPRENEUR|CONSULTANT|)$/i;
 
+// Not cached itself: the member and cycle totals are looked up here, outside
+// any "use cache" scope. The member page's header loads the same totals at the
+// same moment, and Next rejects a cached function that waits on another
+// cached call still running for a different scope.
 export async function getFunding(memberId: string): Promise<Funding | null> {
+  const member = await getMember(memberId);
+  if (!member) return null;
+  const totals = await getCycleTotals();
+  const candidateId = totals[member.id]?.candidateId ?? member.fecIds[member.fecIds.length - 1];
+  return candidateId ? getCandidateFunding(candidateId) : null;
+}
+
+async function getCandidateFunding(candidateId: string): Promise<Funding | null> {
   "use cache";
   cacheLife("hours");
 
-  const member = await getMember(memberId);
-  if (!member) return null;
   const cycle = currentCycle();
-  const totals = await getCycleTotals();
-  const candidateId = totals[member.id]?.candidateId ?? member.fecIds[member.fecIds.length - 1];
-  if (!candidateId) return null;
 
   const base: [string, string | number][] = [
     ["cycle", cycle],
