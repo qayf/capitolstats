@@ -218,7 +218,15 @@ async function Vote({ params }: { params: Params }) {
 
 export default function VotePage({ params }: { params: Params }) {
   return (
-    <Suspense fallback={<div className="profile" style={{ height: 220 }} />}>
+    <Suspense
+      fallback={
+        <div className="profile" style={{ minHeight: 220 }}>
+          <div className="profile-inner vote-head">
+            <div className="loading">Loading roll call</div>
+          </div>
+        </div>
+      }
+    >
       <Vote params={params} />
     </Suspense>
   );

@@ -323,6 +323,8 @@ table.data th.sorted { color: var(--ink); }
 .split-nums .R { color: var(--rep); }
 
 .skeleton { background: var(--surface); min-height: 180px; }
+.loading { color: var(--muted); font-size: 13px; }
+.loading::after { content: "…"; }
 
 footer.site { max-width: var(--max); margin: 8px auto 0; padding: 20px 16px 40px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
 footer.site a { color: var(--link); }

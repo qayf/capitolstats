@@ -231,7 +231,15 @@ async function BillView({ params }: { params: Params }) {
 
 export default function BillPage({ params }: { params: Params }) {
   return (
-    <Suspense fallback={<div className="profile" style={{ height: 220 }} />}>
+    <Suspense
+      fallback={
+        <div className="profile" style={{ minHeight: 220 }}>
+          <div className="profile-inner vote-head">
+            <div className="loading">Loading bill</div>
+          </div>
+        </div>
+      }
+    >
       <BillView params={params} />
     </Suspense>
   );

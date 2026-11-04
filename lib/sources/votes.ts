@@ -93,6 +93,13 @@ function toObjects(rows: string[][]) {
   return body.filter((r) => r.length === header.length).map((r) => Object.fromEntries(header.map((h, i) => [h, r[i]])));
 }
 
+// Voteview writes the same number differently across files and Congresses
+// ("14009" vs "14009.0", "200" vs "200.0"), so IDs and codes are normalized
+// before they are compared.
+function num(value: string | undefined) {
+  return value === undefined || value.trim() === "" ? "" : String(Number(value));
+}
+
 // Voteview cast codes: 1 yea, 6 nay, 7/8 present count as voting;
 // 2-5 (paired / announced) and 9 (not voting) count as missed; 0 = not in office.
 const VOTED = new Set(["1", "6", "7", "8"]);
@@ -171,7 +178,7 @@ export async function getChamberVotes(chamber: Chamber, congress = currentCongre
 
   const bioguideByIcpsr = new Map<string, string>();
   for (const m of toObjects(parseCSV(membersCsv))) {
-    if (m.bioguide_id) bioguideByIcpsr.set(m.icpsr, m.bioguide_id);
+    if (m.bioguide_id) bioguideByIcpsr.set(num(m.icpsr), m.bioguide_id);
   }
 
   // The votes file is large and has no quoted fields, so split it directly.
@@ -180,8 +187,8 @@ export async function getChamberVotes(chamber: Chamber, congress = currentCongre
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(",");
     if (cols.length < 5) continue;
-    const id = bioguideByIcpsr.get(cols[3]);
-    const code = cols[4].trim();
+    const id = bioguideByIcpsr.get(num(cols[3]));
+    const code = num(cols[4]);
     if (!id || (!VOTED.has(code) && !MISSED.has(code))) continue;
 
     const roll = Number(cols[2]);
@@ -279,20 +286,20 @@ export async function getRollCall(chamber: Chamber, year: number, clerkRoll: num
   const people = new Map<string, Omit<MemberPosition, "position">>();
   for (const m of toObjects(parseCSV(membersCsv))) {
     if (m.chamber.toLowerCase() !== chamber) continue;
-    const party = m.party_code === "100" ? "D" : m.party_code === "200" ? "R" : "I";
+    const party = num(m.party_code) === "100" ? "D" : num(m.party_code) === "200" ? "R" : "I";
     // Prefer the name a sitting member goes by ("Ted Budd", not "Theodore Budd").
     const known = current.find((c) => c.id === m.bioguide_id);
     const names = known ? { name: known.name, sortName: known.sortName } : displayName(m.bioname);
-    people.set(m.icpsr, { id: m.bioguide_id || null, ...names, party, state: m.state_abbrev });
+    people.set(num(m.icpsr), { id: m.bioguide_id || null, ...names, party, state: m.state_abbrev });
   }
 
   const roll = String(rollcall.roll);
   const positions: MemberPosition[] = [];
   for (const line of votesCsv.split("\n")) {
     const cols = line.split(",");
-    if (cols[2] !== roll) continue;
-    const person = people.get(cols[3]);
-    const position = POSITION[cols[4]?.trim()];
+    if (num(cols[2]) !== roll) continue;
+    const person = people.get(num(cols[3]));
+    const position = POSITION[num(cols[4])];
     if (person && position) positions.push({ ...person, position });
   }
   positions.sort((a, b) => a.sortName.localeCompare(b.sortName));
