@@ -16,7 +16,7 @@ type Kind = "nomination" | "nominationCloture" | "passage" | "cloture" | "resolu
 const BILL_TYPES = /^(HR|S|HRES|SRES|HJRES|SJRES|HCONRES|SCONRES)(\d+)$/;
 const BIG_TOPICS = /impeach|war powers|appropriations|defense authorization|budget|debt limit|supreme court|secretary of|tariff|border|health care|tax/i;
 
-function classify(r: RollCall): Kind {
+export function classify(r: RollCall): Kind {
   const q = r.question.toLowerCase();
   const isNomination = r.measure.toUpperCase().startsWith("PN");
   if (q.includes("cloture")) return isNomination ? "nominationCloture" : "cloture";

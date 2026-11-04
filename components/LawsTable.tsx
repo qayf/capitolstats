@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { Law } from "@/lib/sources/presidents";
-import { billLabel, billUrl, date } from "@/lib/format";
+import { billLabel, date, lawPath } from "@/lib/format";
 
 const CEREMONIAL = new Set(["Naming & designations", "Commemorations"]);
 const PAGE = 100;
@@ -71,9 +72,7 @@ export function LawsTable({ laws, categories }: { laws: Law[]; categories: strin
             </tr>
           </thead>
           <tbody>
-            {filtered.slice(0, shown).map((l) => {
-              const href = billUrl(l.congress, l.type, l.number);
-              return (
+            {filtered.slice(0, shown).map((l) => (
                 <tr key={l.law}>
                   <td className="nw">{date(l.date)}</td>
                   <td className="nw">
@@ -81,18 +80,13 @@ export function LawsTable({ laws, categories }: { laws: Law[]; categories: strin
                     <span className="sub">{billLabel(l.type, l.number)}</span>
                   </td>
                   <td className="clip">
-                    {href ? (
-                      <a className="link" href={href} target="_blank" rel="noreferrer">
-                        {l.title}
-                      </a>
-                    ) : (
-                      l.title
-                    )}
+                    <Link className="link" href={lawPath(l)}>
+                      {l.title}
+                    </Link>
                   </td>
                   <td className="nw dim">{l.category}</td>
                 </tr>
-              );
-            })}
+            ))}
           </tbody>
         </table>
       </div>

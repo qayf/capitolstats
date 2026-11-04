@@ -1,5 +1,5 @@
 import { cacheLife } from "next/cache";
-import { fetchText, HOUR } from "../http";
+import { DAY, fetchText, HOUR } from "../http";
 import { getMembers, type Chamber } from "./legislators";
 
 // Roll-call votes for both chambers from Voteview (UCLA), which republishes the
@@ -99,41 +99,74 @@ const VOTED = new Set(["1", "6", "7", "8"]);
 const MISSED = new Set(["2", "3", "4", "5", "9"]);
 
 function filePrefix(chamber: Chamber, congress: number) {
-  return `${chamber === "house" ? "H" : "S"}${congress}`;
+  return `${chamber === "house" ? "H" : "S"}${String(congress).padStart(3, "0")}`;
 }
 
 function fileUrl(kind: "rollcalls" | "members" | "votes", prefix: string) {
   return `${BASE}/${kind}/${prefix}_${kind}.csv`;
 }
 
-export async function getChamberVotes(chamber: Chamber): Promise<ChamberVotes> {
+// Older Voteview records (before about 1990) have no question, result or
+// session fields; everything is in one upper-case description such as
+// "TO PASS H.R. 4242. (PASSED)". These helpers recover what they can.
+function sentenceCase(s: string) {
+  if (!s || s !== s.toUpperCase()) return s;
+  return s
+    .toLowerCase()
+    .replace(/(^|[.!?]\s+|\(\s*)([a-z])/g, (_, p, c) => p + c.toUpperCase())
+    .replace(/\b(h\.\s?r|s|h\.\s?res|s\.\s?res|h\.\s?j\.\s?res|s\.\s?j\.\s?res|h\.\s?con\.\s?res|s\.\s?con\.\s?res)\.(?=\s?\d)/g, (m) => m.toUpperCase())
+    .replace(/\b(u\.s\.|u\.s\.c\.|d\.c\.)/g, (m) => m.toUpperCase());
+}
+
+function legacyResult(desc: string) {
+  const m = /\(([^()]*\b(PASSED|AGREED|ADOPTED|REJECTED|FAILED|CONFIRMED|SUSTAINED|OVERRIDDEN|TABLED|NOT)\b[^()]*)\)\s*\.?\s*$/i.exec(desc);
+  return m ? sentenceCase(m[1].trim()) : "";
+}
+
+function legacyQuestion(desc: string) {
+  // Split at a real sentence end, not at abbreviations like "H.R. 4242".
+  const first = desc.replace(/\s*\([^()]*\)\s*\.?\s*$/, "").split(/\.\s+(?=[A-Z][a-z])/)[0].replace(/\.$/, "");
+  return first.length > 110 ? first.slice(0, 107).trimEnd() + "…" : first;
+}
+
+function sessionFor(date: string, congress: number) {
+  const startYear = 1789 + (congress - 1) * 2;
+  return Number(date.slice(0, 4)) > startYear ? 2 : 1;
+}
+
+export async function getChamberVotes(chamber: Chamber, congress = currentCongress()): Promise<ChamberVotes> {
   "use cache";
   cacheLife("hours");
 
-  const congress = currentCongress();
+  // Past Congresses are final, so their files can be cached much longer.
+  const ttl = congress < currentCongress() ? 30 * DAY : 6 * HOUR;
   const prefix = filePrefix(chamber, congress);
 
   const [rollcallsCsv, membersCsv, votesCsv] = await Promise.all([
-    fetchText(fileUrl("rollcalls", prefix), 6 * HOUR),
-    fetchText(fileUrl("members", prefix), 6 * HOUR),
-    fetchText(fileUrl("votes", prefix), 6 * HOUR),
+    fetchText(fileUrl("rollcalls", prefix), ttl),
+    fetchText(fileUrl("members", prefix), ttl),
+    fetchText(fileUrl("votes", prefix), ttl),
   ]);
 
   const rollcalls: RollCall[] = toObjects(parseCSV(rollcallsCsv))
-    .map((r) => ({
-      chamber,
-      roll: Number(r.rollnumber),
-      clerkRoll: Number(r.clerk_rollnumber || r.rollnumber),
-      session: Number(r.session),
-      date: r.date,
-      measure: r.bill_number ?? "",
-      question: decode(r.vote_question ?? ""),
-      description: decode(r.vote_desc || r.dtl_desc || ""),
-      result: r.vote_result ?? "",
-      majority: r.majority_requirement ?? "",
-      yeas: Number(r.yea_count),
-      nays: Number(r.nay_count),
-    }))
+    .map((r) => {
+      const description = sentenceCase(decode(r.vote_desc || r.dtl_desc || ""));
+      const question = decode(r.vote_question ?? "") || legacyQuestion(description);
+      return {
+        chamber,
+        roll: Number(r.rollnumber),
+        clerkRoll: Number(r.clerk_rollnumber || r.rollnumber),
+        session: Number(r.session) || sessionFor(r.date, congress),
+        date: r.date,
+        measure: r.bill_number ?? "",
+        question,
+        description: description.startsWith(question.replace(/…$/, "")) && description.length < question.length + 20 ? "" : description,
+        result: r.vote_result || legacyResult(r.dtl_desc ?? ""),
+        majority: r.majority_requirement ?? "",
+        yeas: Number(r.yea_count),
+        nays: Number(r.nay_count),
+      };
+    })
     .sort((a, b) => b.roll - a.roll);
 
   const bioguideByIcpsr = new Map<string, string>();
@@ -177,6 +210,10 @@ export function participation(a: Attendance | undefined) {
 
 export function rollCallUrl(r: RollCall, congress: number) {
   const year = Number(r.date.slice(0, 4));
+  // The official online records start in 1990 (House) and 1989 (Senate).
+  if ((r.chamber === "house" && year < 1990) || (r.chamber === "senate" && congress < 101)) {
+    return `https://voteview.com/rollcall/R${r.chamber === "house" ? "H" : "S"}${String(congress).padStart(3, "0")}${String(r.roll).padStart(4, "0")}`;
+  }
   if (r.chamber === "house") return `https://clerk.house.gov/Votes/${year}${r.clerkRoll}`;
   const roll = String(r.clerkRoll).padStart(5, "0");
   return `https://www.senate.gov/legislative/LIS/roll_call_votes/vote${congress}${r.session}/vote_${congress}_${r.session}_${roll}.htm`;
@@ -223,15 +260,20 @@ export async function getRollCall(chamber: Chamber, year: number, clerkRoll: num
   "use cache";
   cacheLife("hours");
 
-  const votes = await getChamberVotes(chamber);
+  // A Congress runs from January 3 of an odd year, so a year maps to one Congress
+  // (votes on January 1–2 of an odd year belong to the one before).
+  const congress = Math.floor((year - 1789) / 2) + 1;
+  if (congress < 1 || congress > currentCongress()) return null;
+  const votes = await getChamberVotes(chamber, congress);
   const rollcall = votes.rollcalls.find((r) => r.clerkRoll === clerkRoll && r.date.startsWith(String(year)));
   if (!rollcall) return null;
 
+  const ttl = congress < currentCongress() ? 30 * DAY : 6 * HOUR;
   const prefix = filePrefix(chamber, votes.congress);
   const [current, membersCsv, votesCsv] = await Promise.all([
     getMembers().catch(() => []),
-    fetchText(fileUrl("members", prefix), 6 * HOUR),
-    fetchText(fileUrl("votes", prefix), 6 * HOUR),
+    fetchText(fileUrl("members", prefix), ttl),
+    fetchText(fileUrl("votes", prefix), ttl),
   ]);
 
   const people = new Map<string, Omit<MemberPosition, "position">>();
@@ -256,4 +298,16 @@ export async function getRollCall(chamber: Chamber, year: number, clerkRoll: num
   positions.sort((a, b) => a.sortName.localeCompare(b.sortName));
 
   return { congress: votes.congress, rollcall, positions };
+}
+
+// Every recorded vote on a bill or resolution, in both chambers, oldest first.
+// `measure` uses Voteview's form, e.g. "HR3684".
+export async function getMeasureVotes(congress: number, measure: string): Promise<RollCall[]> {
+  "use cache";
+  cacheLife("hours");
+  const code = measure.toUpperCase();
+  const [house, senate] = await Promise.all([getChamberVotes("house", congress), getChamberVotes("senate", congress)]);
+  return [...house.rollcalls, ...senate.rollcalls]
+    .filter((r) => r.measure.toUpperCase() === code)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.roll - b.roll);
 }

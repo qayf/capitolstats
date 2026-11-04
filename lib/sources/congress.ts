@@ -162,6 +162,12 @@ export function summaryParagraphs(overview: BillOverview, maxChars = 900) {
   let length = 0;
   for (const p of paragraphs) {
     if (out.length && length + p.length > maxChars) break;
+    // Older summaries are one long paragraph; end it at a sentence break.
+    if (p.length > maxChars) {
+      const cut = p.lastIndexOf(". ", maxChars);
+      out.push(cut > maxChars / 2 ? p.slice(0, cut + 1) + " …" : p.slice(0, maxChars).trimEnd() + "…");
+      break;
+    }
     out.push(p);
     length += p.length;
   }

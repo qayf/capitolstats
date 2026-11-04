@@ -88,6 +88,11 @@ export function parseMeasure(code: string, congress: number) {
   return { label: billLabel(type, number), url: billUrl(congress, type, number) };
 }
 
+// Our page for an enacted law.
+export function lawPath(l: { congress: number; type: string; number: string }) {
+  return `/law/${l.congress}/${l.type.toLowerCase()}/${l.number}`;
+}
+
 export function partyName(p: string) {
   return p === "D" ? "Democrat" : p === "R" ? "Republican" : "Independent";
 }

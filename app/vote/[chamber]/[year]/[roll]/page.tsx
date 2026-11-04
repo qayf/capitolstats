@@ -181,10 +181,12 @@ async function Vote({ params }: { params: Params }) {
               <div className="stat-label">Nay</div>
               <div className="stat-value">{nays}</div>
             </div>
-            <div>
-              <div className="stat-label">Required</div>
-              <div className="vote-result">{MAJORITY[r.majority] ?? (r.majority || "—")}</div>
-            </div>
+            {r.majority && (
+              <div>
+                <div className="stat-label">Required</div>
+                <div className="vote-result">{MAJORITY[r.majority] ?? r.majority}</div>
+              </div>
+            )}
           </div>
         </div>
       </div>

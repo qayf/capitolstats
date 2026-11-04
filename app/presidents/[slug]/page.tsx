@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { BarList, Card, PartyTag, StatStrip, Unavailable } from "@/components/ui";
 import { LawsTable } from "@/components/LawsTable";
 import { getPresidency, PRESIDENCIES, termLabel, type PresidencyDetail } from "@/lib/sources/presidents";
-import { billLabel, billUrl, date, num, ordinal, partyName } from "@/lib/format";
+import { billLabel, date, lawPath, num, ordinal, partyName } from "@/lib/format";
 
 type Params = Promise<{ slug: string }>;
 
@@ -106,20 +106,14 @@ async function President({ params }: { params: Params }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {d.signature.map((l) => {
-                        const href = billUrl(l.congress, l.type, l.number);
-                        return (
+                      {d.signature.map((l) => (
                           <tr key={l.law}>
                             <td className="nw">{date(l.date)}</td>
                             <td className="clip">
                               <strong>
-                                {href ? (
-                                  <a className="link" href={href} target="_blank" rel="noreferrer">
-                                    {l.name}
-                                  </a>
-                                ) : (
-                                  l.name
-                                )}
+                                <Link className="link" href={lawPath(l)}>
+                                  {l.name}
+                                </Link>
                               </strong>
                               <span className="sub">{l.title}</span>
                             </td>
@@ -128,8 +122,7 @@ async function President({ params }: { params: Params }) {
                               <span className="sub">{billLabel(l.type, l.number)}</span>
                             </td>
                           </tr>
-                        );
-                      })}
+                      ))}
                     </tbody>
                   </table>
                 </div>
