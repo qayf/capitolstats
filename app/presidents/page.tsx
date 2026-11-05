@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { connection } from "next/server";
 import { BarList, Card, PartyTag, Skeleton, Unavailable } from "@/components/ui";
 import { getAllPresidencies, termLabel } from "@/lib/sources/presidents";
 import { attempt } from "@/lib/http";
@@ -10,9 +9,6 @@ import { date, num, ordinal } from "@/lib/format";
 export const metadata: Metadata = { title: "Presidents" };
 
 async function Presidents() {
-  // Rendered at request time: the first load gathers every term's laws, which
-  // takes longer than Next allows while prerendering. Results are cached after.
-  await connection();
   const all = await attempt(getAllPresidencies);
   if (!all) {
     return (

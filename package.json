@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "update:presidents": "curl -fsS http://localhost:${PORT:-3000}/api/presidency-stats -o lib/data/presidency-stats.tmp && mv lib/data/presidency-stats.tmp lib/data/presidency-stats.json"
   },
   "dependencies": {
     "next": "16.4.3",

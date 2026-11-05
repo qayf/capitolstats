@@ -1,0 +1,189 @@
+{
+  "biden": {
+    "end": "2025-01-20",
+    "days": 1461,
+    "laws": 636,
+    "ceremonial": 174,
+    "perYear": 159,
+    "congresses": [
+      117,
+      118
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/Joe_Biden_presidential_portrait.jpg/330px-Joe_Biden_presidential_portrait.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "trump-1": {
+    "end": "2021-01-20",
+    "days": 1461,
+    "laws": 784,
+    "ceremonial": 193,
+    "perYear": 196,
+    "congresses": [
+      115,
+      116
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/Official_Presidential_Portrait_of_President_Donald_J._Trump_%282025%29.jpg/330px-Official_Presidential_Portrait_of_President_Donald_J._Trump_%282025%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "obama-2": {
+    "end": "2017-01-20",
+    "days": 1461,
+    "laws": 626,
+    "ceremonial": 143,
+    "perYear": 156.5,
+    "congresses": [
+      113,
+      114,
+      115
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/330px-President_Barack_Obama.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "obama-1": {
+    "end": "2013-01-20",
+    "days": 1461,
+    "laws": 666,
+    "ceremonial": 157,
+    "perYear": 166.5,
+    "congresses": [
+      111,
+      112,
+      113
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/330px-President_Barack_Obama.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "bush-43-2": {
+    "end": "2009-01-20",
+    "days": 1461,
+    "laws": 942,
+    "ceremonial": 262,
+    "perYear": 235.5,
+    "congresses": [
+      109,
+      110,
+      111
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/George-W-Bush.jpeg/330px-George-W-Bush.jpeg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "bush-43-1": {
+    "end": "2005-01-20",
+    "days": 1461,
+    "laws": 876,
+    "ceremonial": 191,
+    "perYear": 219,
+    "congresses": [
+      107,
+      108,
+      109
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/George-W-Bush.jpeg/330px-George-W-Bush.jpeg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "clinton-2": {
+    "end": "2001-01-20",
+    "days": 1461,
+    "laws": 974,
+    "ceremonial": 130,
+    "perYear": 243.5,
+    "congresses": [
+      105,
+      106
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Bill_Clinton.jpg/330px-Bill_Clinton.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "clinton-1": {
+    "end": "1997-01-20",
+    "days": 1461,
+    "laws": 796,
+    "ceremonial": 132,
+    "perYear": 199,
+    "congresses": [
+      103,
+      104
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Bill_Clinton.jpg/330px-Bill_Clinton.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "bush-41": {
+    "end": "1993-01-20",
+    "days": 1461,
+    "laws": 1242,
+    "ceremonial": 255,
+    "perYear": 310.5,
+    "congresses": [
+      101,
+      102,
+      103
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dc/George_H._W._Bush_presidential_portrait_%28cropped%29_%282%29.jpg/330px-George_H._W._Bush_presidential_portrait_%28cropped%29_%282%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "reagan-2": {
+    "end": "1989-01-20",
+    "days": 1461,
+    "laws": 1378,
+    "ceremonial": 310,
+    "perYear": 344.5,
+    "congresses": [
+      99,
+      100
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/Official_Portrait_of_President_Reagan_1981.jpg/330px-Official_Portrait_of_President_Reagan_1981.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "reagan-1": {
+    "end": "1985-01-20",
+    "days": 1461,
+    "laws": 1097,
+    "ceremonial": 185,
+    "perYear": 274.25,
+    "congresses": [
+      97,
+      98,
+      99
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/Official_Portrait_of_President_Reagan_1981.jpg/330px-Official_Portrait_of_President_Reagan_1981.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "carter": {
+    "end": "1981-01-20",
+    "days": 1461,
+    "laws": 1245,
+    "ceremonial": 91,
+    "perYear": 311.25,
+    "congresses": [
+      95,
+      96
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6a/Jimmy_Carter_Official_Portrait2_%283x4_cropped%29.jpg/330px-Jimmy_Carter_Official_Portrait2_%283x4_cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "ford": {
+    "end": "1977-01-20",
+    "days": 895,
+    "laws": 871,
+    "ceremonial": 27,
+    "perYear": 355.4555865921788,
+    "congresses": [
+      93,
+      94,
+      95
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Gerald_Ford_presidential_portrait_%28cropped%29.jpg/330px-Gerald_Ford_presidential_portrait_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "nixon-2": {
+    "end": "1974-08-09",
+    "days": 566,
+    "laws": 368,
+    "ceremonial": 23,
+    "perYear": 237.47703180212014,
+    "congresses": [
+      93
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Richard_Nixon_presidential_portrait_%282%29.jpg/330px-Richard_Nixon_presidential_portrait_%282%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "nixon-1": {
+    "end": "1973-01-20",
+    "days": 1461,
+    "laws": 1310,
+    "ceremonial": 61,
+    "perYear": 327.5,
+    "congresses": [
+      91,
+      92,
+      93
+    ],
+    "photo": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Richard_Nixon_presidential_portrait_%282%29.jpg/330px-Richard_Nixon_presidential_portrait_%282%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  }
+}

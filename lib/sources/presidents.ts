@@ -2,6 +2,7 @@ import { cacheLife } from "next/cache";
 import { API_KEY, DAY, fetchJSON, HOUR, mapLimit } from "../http";
 import { currentCongress } from "./votes";
 import { ordinal } from "../format";
+import savedStats from "../data/presidency-stats.json";
 
 // Laws enacted during each presidential term. Public laws come from the
 // Congress.gov API (coverage starts with the 91st Congress, 1969) and are
@@ -355,19 +356,19 @@ export async function getAllPresidencies(): Promise<(PresidencyStats & { photo: 
   "use cache";
   cacheLife("hours");
 
-  const details = await mapLimit(PRESIDENCIES, 2, (p) => getPresidency(p.slug));
-  return details
-    .filter((d): d is PresidencyDetail => !!d)
-    .map(({ presidency, end, days, laws, ceremonial, perYear, congresses, photo }) => ({
-      presidency,
-      end,
-      days,
-      laws,
-      ceremonial,
-      perYear,
-      congresses,
-      photo,
-    }));
+  // Finished terms never change, so their totals are saved in the repo. Gathering
+  // every law since 1969 takes minutes, which is too long to do for a visitor.
+  // Only the current term, or a term not saved yet, is computed from live data.
+  const saved = savedStats as Record<string, Omit<PresidencyStats, "presidency"> & { photo: string | null }>;
+  const rows = await mapLimit(PRESIDENCIES, 2, async (presidency) => {
+    const stored = presidency.end ? saved[presidency.slug] : undefined;
+    if (stored) return { presidency, ...stored };
+    const d = await getPresidency(presidency.slug);
+    if (!d) return null;
+    const { end, days, laws, ceremonial, perYear, congresses, photo } = d;
+    return { presidency, end, days, laws, ceremonial, perYear, congresses, photo };
+  });
+  return rows.filter((r) => r !== null);
 }
 
 async function getPortrait(wikiTitle: string): Promise<string | null> {
