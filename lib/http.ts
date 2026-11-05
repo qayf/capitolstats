@@ -1,17 +1,21 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
 // Small disk cache in front of every upstream request. The free api.data.gov
 // keys are rate limited, so a response is reused until its TTL runs out, and a
 // stale copy is served if the upstream request fails.
-const CACHE_DIR = path.join(process.cwd(), ".cache", "http");
+// On Vercel only the temp directory is writable, and it lasts as long as the
+// server instance does.
+const CACHE_ROOT = process.env.VERCEL ? path.join(os.tmpdir(), "capitolstats") : path.join(process.cwd(), ".cache");
+const CACHE_DIR = path.join(CACHE_ROOT, "http");
 
 export const API_KEY = process.env.DATA_GOV_API_KEY || "DEMO_KEY";
 
 // Touched by /api/refresh. Cached responses with a TTL of an hour or less
 // (the live feeds) that are older than this file are fetched again.
-const REFRESH_MARKER = path.join(process.cwd(), ".cache", "refreshed-at");
+const REFRESH_MARKER = path.join(CACHE_ROOT, "refreshed-at");
 const LIVE_TTL = 60 * 60;
 
 export async function markRefreshed() {
@@ -47,8 +51,11 @@ export async function fetchText(url: string, ttlSeconds: number, headers: Record
 
   try {
     const body = await download(url, headers);
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-    await fs.writeFile(file, body);
+    // Losing the cache only costs a repeat download, so a failed write isn't fatal.
+    await fs
+      .mkdir(CACHE_DIR, { recursive: true })
+      .then(() => fs.writeFile(file, body))
+      .catch((err) => console.warn(`Could not cache response: ${(err as Error).message}`));
     return body;
   } catch (err) {
     if (stale !== null) return stale;
