@@ -26,3 +26,7 @@ The Latest Votes strip, Top Stories, vote pages and Supreme Court data are tagge
 ## Presidents page totals
 
 Totals for finished presidential terms are saved in `lib/data/presidency-stats.json`, so the Presidents page doesn't have to gather every law since 1969. When a term ends, or if the law categories change, start the dev server and run `npm run update:presidents` (set `PORT` if it isn't on 3000), then commit the file. A finished term missing from the file is computed live until then.
+
+## Bill Tracker and map
+
+The tracker (`lib/sources/pipeline.ts`) lists the current Congress's bills and joint resolutions. Congress.gov has no stage field, so stages come from the enacted-law list, recorded floor votes and each bill's latest action text (`lib/billStage.ts`). Bill pages read the full action history, which is more accurate. The map's state shapes are saved in `lib/data/us-map.json`; `npm run update:map` regenerates them.

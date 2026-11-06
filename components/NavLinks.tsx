@@ -11,6 +11,8 @@ const LINKS = [
   { href: "/court", label: "Supreme Court" },
   { href: "/presidents", label: "Presidents" },
   { href: "/votes", label: "Floor Votes" },
+  { href: "/tracker", label: "Tracker" },
+  { href: "/map", label: "Map" },
 ];
 
 export function NavLinks({ className }: { className: string }) {

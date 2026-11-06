@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "update:presidents": "curl -fsS http://localhost:${PORT:-3000}/api/presidency-stats -o lib/data/presidency-stats.tmp && mv lib/data/presidency-stats.tmp lib/data/presidency-stats.json"
+    "update:presidents": "curl -fsS http://localhost:${PORT:-3000}/api/presidency-stats -o lib/data/presidency-stats.tmp && mv lib/data/presidency-stats.tmp lib/data/presidency-stats.json",
+    "update:map": "node scripts/build-us-map.mjs"
   },
   "dependencies": {
     "next": "16.4.3",
@@ -18,8 +19,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "d3-geo": "^3.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
-    "typescript": "^5"
+    "topojson-client": "^3.1.0",
+    "typescript": "^5",
+    "us-atlas": "^3.0.1"
   }
 }

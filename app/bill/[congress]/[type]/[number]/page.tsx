@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BillProgress } from "@/components/BillProgress";
+import { STAGE_LABELS } from "@/lib/billStage";
 import { Card, Unavailable } from "@/components/ui";
 import { PartyTally } from "@/components/PartyTally";
 import { getBill } from "@/lib/bills";
@@ -48,13 +50,17 @@ async function BillView({ params }: { params: Params }) {
     );
   }
 
-  const { congress, type, number, law, stage, overview, votes, votesAvailable, deciding, president } = data;
+  const { congress, type, number, law, stage, progress, actions, overview, votes, votesAvailable, deciding, president } = data;
   const title = overview?.title ?? law?.title ?? label;
-  const status = law ? "Became law" : stage ? stage : overview?.latestAction ? billStatus({ latestAction: overview.latestAction } as Bill) : "Introduced";
+  const status = law ? "Became law" : progress ? STAGE_LABELS[progress] : stage ? stage : overview?.latestAction ? billStatus({ latestAction: overview.latestAction } as Bill) : "Introduced";
   const summary = overview ? summaryParagraphs(overview, 1400) : [];
   const members = overview?.sponsor ? await getMembers().catch(() => []) : [];
   const sponsorHasPage = !!overview?.sponsor && members.some((m) => m.id === overview.sponsor!.id);
   const recorded = deciding.filter((d) => d.vote);
+  // Major steps only: big bills can have hundreds of individual amendment actions.
+  const major = actions.filter((a) => a.type !== "NotUsed" && !/\b[HS]\.?\s?Amdt|\bamendment (SA|HA)\b|^Amendment |^POSTPONED|^DEBATE|^UNFINISHED|^Considered |^The House (proceeded|resolved)|^Sponsor introductory/i.test(a.text));
+  const timeline = major.slice(-40);
+  const hidden = actions.length - timeline.length;
 
   return (
     <>
@@ -66,6 +72,7 @@ async function BillView({ params }: { params: Params }) {
           </div>
           <h1 className="profile-name">{title}</h1>
           {law && title !== law.title && <p className="vote-desc">{law.title}</p>}
+          {progress && <BillProgress stage={progress} type={type} />}
           <div className="vote-score">
             <div>
               <div className="stat-label">{law ? "Enacted" : "Status"}</div>
@@ -87,7 +94,7 @@ async function BillView({ params }: { params: Params }) {
                     {d.vote.yeas}–{d.vote.nays}
                   </div>
                 ) : (
-                  <div className="vote-result">{votesAvailable ? (law ? "No roll call" : "No vote") : "—"}</div>
+                  <div className="vote-result">{votesAvailable ? "No roll call" : "—"}</div>
                 )}
               </div>
             ))}
@@ -188,6 +195,21 @@ async function BillView({ params }: { params: Params }) {
           </div>
 
           <div className="stack">
+            {timeline.length > 0 && (
+              <Card title="Timeline" aside={hidden > 0 ? `${hidden} minor steps hidden` : undefined} flush>
+                <ol className="timeline">
+                  {timeline.map((a, i) => (
+                    <li key={i}>
+                      <span className="sub">
+                        {date(a.date)}
+                        {a.source !== "Library of Congress" && ` · ${a.source}`}
+                      </span>
+                      {a.text}
+                    </li>
+                  ))}
+                </ol>
+              </Card>
+            )}
             <Card title="All Recorded Votes" aside={votes.length ? `${votes.length}` : undefined} flush>
               {votes.length ? (
                 <table className="data">

@@ -1,6 +1,7 @@
 import { attempt } from "./http";
 import { classify, passed } from "./news";
-import { getBillOverview } from "./sources/congress";
+import { getBillActions, getBillOverview } from "./sources/congress";
+import { canBecomeLaw, furthest, stageFromText, type Stage } from "./billStage";
 import { getLawsForCongress, PRESIDENCIES } from "./sources/presidents";
 import { getMeasureVotes, getRollCall, type RollCall } from "./sources/votes";
 import type { Chamber } from "./sources/legislators";
@@ -24,10 +25,11 @@ export async function getBill(congress: number, type: string, number: string) {
   liveData();
 
   const code = type.toUpperCase();
-  const [laws, overview, votes] = await Promise.all([
+  const [laws, overview, votes, actions] = await Promise.all([
     congress >= 91 ? attempt(() => getLawsForCongress(congress)) : null,
     attempt(() => getBillOverview(congress, code, number)),
     attempt(() => getMeasureVotes(congress, `${code}${number}`)),
+    attempt(() => getBillActions(congress, code, number)),
   ]);
   const law = laws?.find((l) => l.type === code && l.number === number) ?? null;
   if (!overview && !law) return null;
@@ -45,7 +47,16 @@ export async function getBill(congress: number, type: string, number: string) {
   const passedSenate = deciding.some((d) => d.chamber === "senate" && d.isPassage);
   const stage = passedHouse && passedSenate ? "Passed both chambers" : passedHouse ? "Passed House" : passedSenate ? "Passed Senate" : null;
 
+  // Unlike the tracker's quick pass over latest actions, this reads the bill's
+  // whole history, so it is the more accurate stage.
+  let progress: Stage | null = null;
+  if (canBecomeLaw(code)) {
+    progress = (actions ?? []).reduce<Stage>((s, a) => furthest(s, stageFromText(a.text, code)), "committee");
+    if (passedHouse || passedSenate) progress = furthest(progress, passedHouse && passedSenate ? "bothChambers" : "firstChamber");
+    if (law) progress = "law";
+  }
+
   const president = law ? PRESIDENCIES.find((p) => law.date > p.start && law.date <= (p.end ?? "9999-12-31")) ?? null : null;
 
-  return { congress, type: code, number, law, stage, overview, votes: votes ?? [], votesAvailable: votes !== null, deciding, president };
+  return { congress, type: code, number, law, stage, progress, actions: actions ?? [], overview, votes: votes ?? [], votesAvailable: votes !== null, deciding, president };
 }

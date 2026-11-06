@@ -1,5 +1,6 @@
 import { cacheLife } from "next/cache";
 import { API_KEY, DAY, fetchJSON, HOUR } from "../http";
+import { liveData } from "../live";
 
 // Congress.gov API v3: sponsored and cosponsored legislation per member.
 const BASE = "https://api.congress.gov/v3";
@@ -172,4 +173,38 @@ export function summaryParagraphs(overview: BillOverview, maxChars = 900) {
     length += p.length;
   }
   return out;
+}
+
+export interface BillAction {
+  date: string;
+  text: string;
+  type: string;
+  source: string; // "House", "Senate" or "Library of Congress"
+}
+
+// A bill's full action history, oldest first. Congress.gov often records one
+// event twice, once from the chamber and once from the Library of Congress.
+export async function getBillActions(congress: number, type: string, number: string): Promise<BillAction[]> {
+  "use cache";
+  liveData();
+
+  const data = await fetchJSON<{
+    actions: { actionDate: string; text: string; type?: string; sourceSystem?: { name: string } }[];
+  }>(url(`/bill/${congress}/${type.toLowerCase()}/${number}/actions`, { limit: 250 }), HOUR);
+
+  const seen = new Set<string>();
+  return data.actions
+    .map((a) => ({
+      date: a.actionDate,
+      text: a.text,
+      type: a.type ?? "",
+      source: a.sourceSystem?.name.startsWith("House") ? "House" : a.sourceSystem?.name === "Senate" ? "Senate" : "Library of Congress",
+    }))
+    .filter((a) => {
+      const key = `${a.date}|${a.text}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .reverse();
 }
