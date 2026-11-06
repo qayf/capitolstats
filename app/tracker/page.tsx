@@ -78,8 +78,8 @@ async function Tracker() {
       <p className="note">
         Covers bills and joint resolutions, the measures that can become law. Congress.gov publishes updates about daily, so
         this is current to within about a day. Stages are worked out from each bill&apos;s latest action, recorded floor votes
-        and the list of enacted laws, so a bill passed by voice vote can occasionally show one stage behind. Each bill&apos;s own
-        page uses its full history.
+        and the list of enacted laws, so a bill can occasionally show one stage behind. Each bill&apos;s own page uses its full
+        history.
         {!data.complete && " Floor votes or the law list could not be loaded just now, so some stages may be behind."}
       </p>
     </div>

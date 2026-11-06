@@ -38,7 +38,7 @@ export function stageFromText(text: string, type: string): Stage {
   const fromHouse = originOf(type) === "House";
 
   if (/became public law|became private law|signed by president/.test(t)) return "law";
-  if (/vetoed by president|pocket veto/.test(t)) return "vetoed";
+  if (/\bvetoed\b|\bveto\b|objections of the president/.test(t)) return "vetoed";
   if (/presented to president/.test(t)) return "president";
   if (/resolving differences|conference report|enrolled|measure signed in|cleared for white house/.test(t)) return "bothChambers";
 
@@ -62,6 +62,13 @@ export function stageFromText(text: string, type: string): Stage {
 
   if (onSenateFloor || /placed on .*calendar|ordered to be reported|reported by|reported \(|discharged/.test(t)) return "reported";
   return "committee";
+}
+
+// Text that really is committee-stage activity. A bill marked "committee" whose
+// latest action is anything else, such as a generic floor note, needs its full
+// history checked; the latest action alone says little about it.
+export function isCommitteeText(text: string) {
+  return /referred|committee|subcommittee|hearing|mark-?up|sponsor introductory|introduced/i.test(text);
 }
 
 export interface ProgressStep {

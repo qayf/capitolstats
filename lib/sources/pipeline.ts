@@ -1,7 +1,8 @@
 import { API_KEY, attempt, fetchJSON, HOUR, mapLimit } from "../http";
 import { liveData } from "../live";
 import { classify, passed } from "../news";
-import { furthest, originOf, stageFromText, type Stage } from "../billStage";
+import { furthest, isCommitteeText, originOf, stageFromText, type Stage } from "../billStage";
+import { getBillActions } from "./congress";
 import { getLawsForCongress } from "./presidents";
 import { currentCongress, getAllVotes } from "./votes";
 
@@ -90,6 +91,15 @@ export async function getPipeline() {
     }
     if (enacted.has(key)) stage = "law";
     return { congress, ...b, stage };
+  });
+
+  // A few dozen bills look like they're in committee only because their latest
+  // action is a generic floor note, as with vetoed bills after a failed override.
+  // Their full histories settle it.
+  const unclear = result.filter((b) => b.stage === "committee" && !isCommitteeText(b.action.text));
+  await mapLimit(unclear, 6, async (b) => {
+    const actions = await attempt(() => getBillActions(congress, b.type, b.number));
+    b.stage = (actions ?? []).reduce<Stage>((stage, a) => furthest(stage, stageFromText(a.text, b.type)), b.stage);
   });
 
   return {
