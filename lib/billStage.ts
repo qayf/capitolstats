@@ -40,15 +40,15 @@ export function stageFromText(text: string, type: string): Stage {
   if (/became public law|became private law|signed by president/.test(t)) return "law";
   if (/\bvetoed\b|\bveto\b|objections of the president/.test(t)) return "vetoed";
   if (/presented to president/.test(t)) return "president";
-  if (/resolving differences|conference report|enrolled|measure signed in|cleared for white house/.test(t)) return "bothChambers";
+  if (/resolving differences|conference|enrolled|measure signed in|cleared for white house/.test(t)) return "bothChambers";
 
   // "Rule H. Res. 123 passed House" is the rule for debating a bill, not the bill.
   if (/^rule h\.? ?res/.test(t)) return "committee";
 
   // Passage in the chamber a bill started in is the first step; passage in the
   // other chamber means both have now acted on it.
-  const house = PASSED_HOUSE.test(t) || /message on house action (sent|received)/.test(t);
-  const senate = PASSED_SENATE.test(t) || /message on senate action (sent|received)/.test(t);
+  const house = PASSED_HOUSE.test(t) || /message on house action (sent|received)|message from the house|house message/.test(t);
+  const senate = PASSED_SENATE.test(t) || /message on senate action (sent|received)|message from the senate|senate message/.test(t);
   if (house || senate) return house === fromHouse ? "firstChamber" : "bothChambers";
 
   // Activity in the other chamber means the first chamber already passed it.
