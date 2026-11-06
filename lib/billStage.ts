@@ -47,8 +47,8 @@ export function stageFromText(text: string, type: string): Stage {
 
   // Passage in the chamber a bill started in is the first step; passage in the
   // other chamber means both have now acted on it.
-  const house = PASSED_HOUSE.test(t) || /message on house action sent to the senate/.test(t);
-  const senate = PASSED_SENATE.test(t) || /message on senate action sent to the house/.test(t);
+  const house = PASSED_HOUSE.test(t) || /message on house action (sent|received)/.test(t);
+  const senate = PASSED_SENATE.test(t) || /message on senate action (sent|received)/.test(t);
   if (house || senate) return house === fromHouse ? "firstChamber" : "bothChambers";
 
   // Activity in the other chamber means the first chamber already passed it.
